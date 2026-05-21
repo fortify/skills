@@ -126,6 +126,34 @@ fcli Docker images are available: https://hub.docker.com/repository/docker/forti
 
 ---
 
+## ScanCentral Client (sc-client) Installation
+
+The ScanCentral Client is needed for packaging source code for SAST scanning. Do not rely on a pre-installed `scancentral` binary unless in an airgapped environment. Use fcli to install and run the appropriate version:
+
+```bash
+# Install (latest version)
+fcli tool sc-client install -y
+
+# Install a specific version
+fcli tool sc-client install -v 25.4 -y
+
+# Run the installed client
+fcli tool sc-client run -- package -bt gradle -o package.zip
+# Or run a specific version
+fcli tool sc-client run -v 25.4 -- package -bt gradle -o package.zip
+```
+
+**Version selection depends on the target platform:**
+
+| Target | Which version | How to determine |
+|--------|--------------|------------------|
+| **FoD** | Latest (default) | `fcli tool sc-client install -y` |
+| **SSC / SC-SAST** | Sensor-compatible | `fcli sc-sast sensor list --latest-only` → use the "Compatible client version" value |
+
+For SSC/SC-SAST, using an incompatible sc-client version may cause scan failures. Always check sensor compatibility first.
+
+---
+
 ## Notes
 
 - **Native binaries** are preferred for performance and auto-completion, but if you encounter unexplained errors, try the `.jar` version — native binary issues are platform-specific.

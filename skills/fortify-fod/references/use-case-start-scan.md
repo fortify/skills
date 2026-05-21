@@ -254,8 +254,15 @@ fcli fod sast-scan setup --rel=<releaseId> \
 
 **Do NOT use** these flags: `--include-third-party-libs`, `--technology-stack`, `--use-source-control`.
 
-**6c. Package the code**
+**6c. Install the ScanCentral Client and package the code**
+
+For FoD, use the **latest** sc-client version (see `references/fcli-install.md` for details and version selection guidance):
+
 ```bash
+# Install the latest sc-client (skip if already installed)
+fcli tool sc-client install -y
+
+# Package the code using the fcli action (recommended — handles build tool detection)
 fcli fod action run package --rel=<releaseId>
 ```
 This produces a `package.zip` file in the current directory by default. Note the output path.

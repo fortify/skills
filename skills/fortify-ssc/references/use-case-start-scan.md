@@ -224,22 +224,23 @@ Do not start a new scan. Ask the user to wait for the existing scan to complete 
 
 > **Note**: If SC-SAST is configured to allow replacement of existing scan jobs (the default for most deployments), this check is advisory. Use `--no-replace` on the `scan start` command if you want to preserve any in-progress scan instead of replacing it.
 
-**6c. Package the code**
+**6c. Install the compatible ScanCentral Client and package the code**
 
-Use the `scancentral` client to package the project. The build tool (`-bt`) should match the project:
+For SSC / ScanCentral SAST, the sc-client version must be **compatible with the sensors**. Determine and install the compatible version:
 
 ```bash
-# Auto-detect build tool (works for Maven, Gradle, MSBuild, npm, etc.)
-scancentral package -o package.zip
+# Check compatible version
+fcli sc-sast sensor list --latest-only
+# → note the "Compatible client version" column (e.g., 25.4)
 
-# Specify build tool explicitly if auto-detection fails
-scancentral package -bt mvn -o package.zip      # Maven
-scancentral package -bt gradle -o package.zip   # Gradle
-scancentral package -bt msbuild -o package.zip  # .NET / MSBuild
-scancentral package -bt npm -o package.zip      # Node.js / npm
+# Install and package (replace <compatibleVersion> with the value above)
+fcli tool sc-client install -v <compatibleVersion> -y
+fcli tool sc-client run -v <compatibleVersion> -- package -o package.zip
 ```
 
-Note the output path (`package.zip` by default in the current directory).
+If auto-detection fails, specify the build tool explicitly with `-bt` (e.g., `-bt mvn`, `-bt gradle`, `-bt msbuild`, `-bt npm`).
+
+See `references/fcli-install.md` for full sc-client installation details, version selection guidance, and additional options.
 
 **6d. Start the scan**
 
