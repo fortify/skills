@@ -1,15 +1,22 @@
 ---
 name: fortify-ssc
-description: "Perform tasks against Fortify SSC (Application Security Center). Answer questions about applications, application versions, security issues/vulnerabilities, policy compliance or portfolio-level analysis. Create new app versions (not applications). Start & monitor ScanCentral SAST/DAST scans or upload FPR artifacts. Audit & triage issues."
+description: "Perform tasks against Fortify SSC (Software Security Center): query applications/application versions; query & triage existing security issues in SSC; start & monitor full ScanCentral SAST/DAST scans or upload FPR artifacts; create app versions; policy and portfolio analysis. NOT for lightweight AI review of local code changes/diffs (use fortify-change-review)."
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   tested-with:
     fcli: "3.18"
     ssc: "25.4"
 ---
 
 >SSC may also be referred to as "Fortify Software Security Center".
+
+## Disambiguate "scan" / "review" first
+
+These terms are overloaded. If ambiguous ("run a Fortify scan/review", "run a security review"), confirm user intent first:
+
+- **scan** → 1) full ScanCentral SAST/DAST scan of the codebase (this skill), or 2) lightweight AI review of local code changes (`fortify-change-review`).
+- **review** → 1) triage issues already found by SSC (this skill), or 2) lightweight AI review of local code changes (`fortify-change-review`).
 
 ## Verify Active SSC Session (skip if already confirmed this conversation)
 
