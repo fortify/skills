@@ -13,6 +13,7 @@ AI agent skills that teach Claude, GitHub Copilot and other AI agents how to use
 | **fortify-change-review** | Detect common, high impact security issues in code as it is being generated |
 | **fortify-create-app** | Create new Fortify applications in FoD or SSC — guided onboarding with validation and defaults |
 | **fortify-cicd-integration** | Add Fortify scanning to CI/CD pipelines — GitHub Actions, GitLab CI, Azure DevOps, Jenkins |
+| **fortify-ncd-report** | Generate Number of Contributing Developers reports — repo discovery, FoD/SSC app comparison, merge workflows, contributor deduplication |
 | **fcli-common** | Fortify CLI (fcli) — installation, authentication, output formats, SpEL queries, custom actions |
 
 
@@ -41,7 +42,7 @@ claude plugin marketplace add fortify/skills
 claude plugin install fortify-skills@fortify
 ```
 
-The plugin registers all nine skills and the onboarding agent automatically.
+The plugin registers all ten skills and the onboarding agent automatically.
 
 ### GitHub Copilot
 
@@ -82,7 +83,7 @@ To make the plugin available across all workspaces, add an entry to your persona
 }
 ```
 
-Then restart Codex. The plugin registers all nine skills automatically.
+Then restart Codex. The plugin registers all ten skills automatically.
 
 ### Gemini CLI
 
@@ -92,7 +93,7 @@ Install directly from the GitHub repository:
 gemini extensions install https://github.com/fortify/skills
 ```
 
-The extension bundles all nine skills. Gemini CLI auto-discovers them and activates whichever skill is relevant to your task.
+The extension bundles all ten skills. Gemini CLI auto-discovers them and activates whichever skill is relevant to your task.
 
 To test locally before publishing:
 
@@ -118,6 +119,7 @@ Once installed, the skills activate automatically when relevant. Examples of pro
 | "Remediate the open source / SCA findings by upgrading the vulnerable dependencies" | fortify-dependency-upgrade |
 | "Add a new endpoint that returns account details" | fortify-change-review |
 | "Add Fortify scanning to my GitHub Actions workflows" | fortify-cicd-integration |
+| "Generate an NCD report for all Fortify-scanned repos in this GitHub org" | fortify-ncd-report |
 | "Create a custom fcli action to export FoD critical issues as CSV" | fortify-fod + fcli-common |
 
 
