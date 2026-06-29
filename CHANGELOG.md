@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.2.0](https://github.com/fortify/skills/compare/v1.1.1...v1.2.0) (2026-06-29)
+
+
+### Features
+
+* add fortify-change-review and fortify-dependency-upgrade skills ([316b092](https://github.com/fortify/skills/commit/316b092cfaea0dd275721b5febe8ec3453fc7db0))
+* disambiguate full scan/issue triage from change-review in fortify-fod ([a03c42b](https://github.com/fortify/skills/commit/a03c42bdc25b80e77ea42ae5c4a37ab803e57d8d))
+* disambiguate full scan/issue triage from change-review in fortify-ssc ([75322ee](https://github.com/fortify/skills/commit/75322eec73c1b698dcd8a571775a27ce746f2e58))
+* scope fortify-remediate to SAST/DAST, delegate SCA to fortify-dependency-upgrade ([bc6f3e2](https://github.com/fortify/skills/commit/bc6f3e2941a6c9bc5af86fcb8f6233584c821f1f))
+
+
+### Bug Fixes
+
+* bump fcli-common and fortify-create-app versions for sc-client fix ([b94c3b2](https://github.com/fortify/skills/commit/b94c3b24b607a9587b522960a8e08b15720067e5))
+* Fix ScanCentral Client version handling ([7ad5fe2](https://github.com/fortify/skills/commit/7ad5fe24a6112865cf023ea212829522070b8b50))
+
 ## [1.1.1](https://github.com/fortify/skills/compare/v1.1.0...v1.1.1) (2026-05-21)
 
 
