@@ -1,13 +1,22 @@
 ---
 name: fortify-fod
-description: "Perform tasks against Fortify on Demand (FoD). Answer questions about applications, releases, security issues/vulnerabilities, policy compliance or portfolio-level analysis. Create new releases (not applications). Start & monitor SAST/DAST/SCA/open source scans. Import FPR/SARIF/CycloneDX artifacts. Audit & triage issues."
+description: "Perform tasks against Fortify on Demand (FoD): query applications/releases; query & triage existing security issues in FoD; start & monitor full SAST/DAST/SCA/open source scans of the codebase; create releases; import FPR/SARIF/CycloneDX artifacts; policy and portfolio analysis. NOT for lightweight AI review of local code changes/diffs (use fortify-change-review)."
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   tested-with:
     fcli: "3.18"
     fod: "26.1"
 ---
+
+---
+
+## Disambiguate "scan" / "review" first
+
+These terms are overloaded. If ambiguous ("run a Fortify scan/review", "run a security review"), confirm user intent first:
+
+- **scan** → 1) full SAST/DAST/SCA scan of the codebase (this skill), or 2) lightweight AI review of local code changes (`fortify-change-review`).
+- **review** → 1) triage issues already found by FoD (this skill), or 2) lightweight AI review of local code changes (`fortify-change-review`).
 
 ## Verify Active FoD Session (skip if already confirmed this conversation)
 

@@ -46,7 +46,7 @@ Use **Step** for all numbered workflow divisions — in `SKILL.md`, `agent.md`, 
 | Gates | **Step N gate** | `### Step N gate` or `### Step N → Step N gate` | Checklists between steps |
 
 - Step numbering **resets per file** — each file (SKILL.md, each reference file) starts at Step 0 or Step 1.
-- Cross-file references use the file name for disambiguation: "Step 2 in `references/sca-fix-planning.md`".
+- Cross-file references use the file name for disambiguation: "Step 2 in `references/sast-dast-fix-planning.md`".
 - Gates between steps within a reference file use `### Step N → Step N gate`.
 
 ## Reference path rules (per Agent Skills spec)
@@ -94,5 +94,6 @@ Overall version is managed by [release-please](https://github.com/googleapis/rel
 
 - CI checks that `metadata.version` is bumped when skill content changes
 - release-please auto-bumps `version.txt` and all JSON version fields on release
+- **Do not use commit scopes.** The release tooling does not support a parenthesized scope/component (e.g. `feat(fortify-fod): …` is **not** supported). Use the plain type only (`feat:`, `fix:`) and name the affected skill in the description.
 
 See `CONTRIBUTING.md` for full versioning details.

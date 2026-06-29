@@ -3,7 +3,7 @@ name: fcli-common
 description: Generic reference for the Fortify CLI (fcli). Install, upgrade, authenticate, fcli environment variables, output formats, SpEL query syntax, variable chaining and custom action framework.
 license: MIT
 metadata:
-  version: "1.0.1"
+  version: "1.0.2"
   tested-with:
     fcli: "3.18"
 ---
