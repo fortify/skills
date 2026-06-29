@@ -94,5 +94,6 @@ Overall version is managed by [release-please](https://github.com/googleapis/rel
 
 - CI checks that `metadata.version` is bumped when skill content changes
 - release-please auto-bumps `version.txt` and all JSON version fields on release
+- **Do not use commit scopes.** The release tooling does not support a parenthesized scope/component (e.g. `feat(fortify-fod): …` is **not** supported). Use the plain type only (`feat:`, `fix:`) and name the affected skill in the description.
 
 See `CONTRIBUTING.md` for full versioning details.

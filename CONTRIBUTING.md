@@ -69,9 +69,11 @@ The overall version (in `version.txt` and JSON plugin/marketplace files) is mana
 
 | Commit prefix | Version bump | Example |
 |---------------|-------------|---------|
-| `fix:` or `fix(scope):` | Patch | `fix(fortify-fod): clarify upload step wording` |
-| `feat:` or `feat(scope):` | Minor | `feat: add fortify-create-app skill` |
+| `fix:` | Patch | `fix: clarify upload step wording in fortify-fod` |
+| `feat:` | Minor | `feat: add fortify-create-app skill` |
 | `feat!:` or any `BREAKING CHANGE:` | Major | `feat!: remove deprecated fortify-legacy skill` |
+
+> **Do not use commit scopes.** Our release tooling does not support a parenthesized scope/component in the commit type — e.g. `feat(fortify-fod): …` is **not** supported. Use the plain type only (`feat:`, `fix:`) and name the affected skill in the description instead (`feat: disambiguate scan/review in fortify-fod`).
 
 release-please automatically bumps these files on release:
 
