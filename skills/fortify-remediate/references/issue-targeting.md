@@ -2,6 +2,8 @@
 
 This reference explains how to idenfity a focused, remediation-ready target set of Fortify-detected security issues to remediate.
 
+> **SAST and DAST only.** This skill remediates static (SAST) and dynamic (DAST) findings. SCA / open source dependency findings are out of scope — exclude them from every target set and direct the user to the `fortify-dependency-upgrade` skill.
+
 ---
 
 ## Handling Specific Requests
@@ -12,7 +14,6 @@ When the user names specific issues, categories, or files, your job is to confir
 |---|---|
 | "Fix issue 12345678" | Retrieve details for that specific ID; confirm it exists and is still active |
 | "Fix all SQL Injection in UserService.java" | Filter issue list by `category` + `primaryLocation`; show the user the full list before proceeding |
-| "Upgrade Log4j" | Identify all open issues linked to that component (name may vary — search broadly); treat as SCA batch |
 | "Fix SSL and related config issues" | Filter on the category name; present the full list; use `matches` for partial category matching |
 
 Always show the filtered results to the user before committing to the target set. Scope surprises are easier to handle before you've written code.
@@ -32,8 +33,7 @@ Score potential candidates on these factors and propose the batch with the highe
 1. **Severity and exploitability** — Prioritize Critical and High findings. Issues Fortify classifies as likely-exploitable or that Aviator has reviewed and confirmed carry higher true-positive confidence.
 2. **Audit confidence** — Issues that have been audited and confirmed as true positives (FoD: `auditorStatus` is not `Pending Review`; SSC: `Analysis` custom tag is set) are stronger candidates than unaudited issues. Unaudited issues may be false positives — they're still worth including, but factor the uncertainty into your proposal.
 3. **Reach** — Issues in heavily-used, externally-facing code (web controllers, API endpoints, authentication paths) matter more than isolated utility code.
-3. **Fix density** — Categories where one pattern fixes many instances (e.g., all `SQL Injection: JDBC` in one DAO class) are efficient picks. A single root cause fixing 10 issues is better than 10 unrelated one-off fixes.
-4. **SCA overlap** — Upgrading a widely-used dependency (e.g., `spring-security`) can close many issues at once. These often look high-value even at lower severity.
+4. **Fix density** — Categories where one pattern fixes many instances (e.g., all `SQL Injection: JDBC` in one DAO class) are efficient picks. A single root cause fixing 10 issues is better than 10 unrelated one-off fixes.
 5. **Low regression risk** — Prefer fixes that are self-contained and unlikely to change observable behavior. Defer complex architectural changes unless the user explicitly asks for them.
 
 ### How to Query for Candidates
@@ -41,16 +41,16 @@ Score potential candidates on these factors and propose the batch with the highe
 Pull a prioritized view to reason about:
 
 ```bash
-# FoD — critical/high issues grouped by category
+# FoD — critical/high SAST/DAST issues grouped by category (SCA excluded)
 # Note: FoD uses 'severityString' for severity and 'category' for grouping
 fcli fod issue list --rel=<releaseNameOrId> \
-  --query "severityString=='Critical' || severityString=='High'" \
+  --query "(severityString=='Critical' || severityString=='High') && scanType!='OpenSource'" \
   -o json
 
-# SSC — unaudited critical/high issues
+# SSC — unaudited critical/high SAST/DAST issues (SCA/open source excluded)
 # Note: SSC uses 'friority' for severity and 'issueName' for grouping
 fcli ssc issue list --av="<App:Version>" \
-  --query "(friority=='Critical' || friority=='High') && audited==false" \
+  --query "(friority=='Critical' || friority=='High') && audited==false && analyzer!='Open Source'" \
   -o json
 ```
 
@@ -73,19 +73,18 @@ When grouping, prefer focusing on one subcategory (or closely related subcategor
 
 ---
 
-## SAST vs DAST vs SCA — Mixing Rules
+## SAST vs DAST — Mixing Rules
 
-Fortify issues come from three scan types, and mixing them in a single remediation pass requires care:
+This skill handles two scan types. (A third, SCA / open source, is out of scope — see the note at the top of this file.)
 
 | Scan type | Primary data source | Typical fix |
 |---|---|---|
 | **Static (SAST)** | Source code analysis | Code change in application source |
 | **Dynamic (DAST)** | Runtime/web scanning | Code change, configuration, headers, or middleware |
-| **Open Source (SCA)** | Dependency manifest analysis | Dependency version update |
-
-**Do not mix SCA with SAST/DAST in the same remediation pass** unless the issue category is the same (rare — e.g., a SAST finding and an SCA finding both pointing to the same class in the same file). SCA fixes are version bumps; SAST/DAST fixes are code changes. They follow completely different workflows and carry different risk profiles.
 
 **SAST and DAST can be mixed** when the category is identical (e.g., both are `SQL Injection`). If the category and fix location overlap, a single change can close both.
+
+**SCA / open source findings are not remediated here.** They are fixed by upgrading dependencies, which follows a completely different workflow with a different risk profile. If the user's request includes open source / dependency issues, hand those off to the `fortify-dependency-upgrade` skill.
 
 ---
 

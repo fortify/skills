@@ -1,9 +1,9 @@
 ---
 name: fortify-remediate
-description: Remediate security vulnerabilities detected by Fortify (SAST, DAST, and SCA/open source). Fix specific issues, categories, or general issue reduction. Supports FoD (Fortify on Demand) and SSC (Software Security Center).
+description: Remediate SAST (static) and DAST (dynamic) security vulnerabilities ALREADY detected by Fortify in FoD or SSC — fix specific issues, categories, or reduce issue counts, including applying SAST Aviator fixes. For SCA / open source dependency findings (vulnerable third-party components, CVEs), use fortify-dependency-upgrade instead. NOT for discovering or reviewing new issues (use fortify-change-review for a local code-change review, or fortify-fod / fortify-ssc to scan and triage).
 license: MIT
 metadata:
-  version: "1.0.1"
+  version: "1.1.0"
   tested-with:
     fcli: "3.18"
     fod: "26.1"
@@ -13,6 +13,8 @@ metadata:
 # Fortify Remediation
 
 Remediating Fortify findings is a 4-step process. Work through steps in order — each step has a clear entry condition and output that feeds the next.
+
+> **Scope: SAST and DAST only.** This skill remediates static (SAST) and dynamic (DAST) findings — issues fixed by changing application source code or configuration. It does **not** cover SCA / open source dependency findings (vulnerable third-party components, CVEs), which are fixed by upgrading dependencies. If the target issues are SCA / open source, stop and use the `fortify-dependency-upgrade` skill instead.
 
 > **Stay within the documented workflow.** Do not proactively offer side-quests or capabilities that aren't part of the step you're in — e.g., don't search for vulnerabilities in the source code, look for local files or vulnerabilities detected by non-Fortify scanners, set up CI/CD scanning, reconfigure scan settings, parse FPR files, etc. If a step in this skill calls for it, do it; if not, don't surface it as an option. Eager suggestions waste the user's attention and lead them off the remediation path.
 
@@ -59,7 +61,7 @@ FoD and SSC use different field names for the same concepts. Use this mapping wh
 | Issue instance ID | `instanceId` | `issueInstanceId` |
 | Category name | `category` | `issueName` |
 | Severity | `severityString` | `friority` |
-| Scan type | `scanType` (`Static`, `Dynamic`, `OpenSource`) | `analyzer` (`SCA`, `Open Source`, etc.) |
+| Scan type | `scanType` (`Static`, `Dynamic`) | `analyzer` (`SCA` = Static Code Analyzer, etc.) |
 | Auditor/analysis status | `auditorStatus` | Custom tag (typically `Analysis`) |
 | Suppressed | `isSuppressed` | `suppressed` |
 
@@ -76,6 +78,8 @@ Step 1 ends when you have a **confirmed, specific list of Fortify issue IDs with
 **Category/file/component request**: Use the platform skill's issue investigation commands to filter to the matching issues. Present the full matching list to the user so they can confirm the scope before you proceed.
 
 **General request** ("fix the top issues", no specific target): Identify a proposed batch of related issues representing the best remediation value, then present this proposal to the user for confirmation. See `references/issue-targeting.md` for how to select and group issues effectively.
+
+**SCA / open source out of scope**: This skill targets only SAST (`scanType=='Static'` / SSC `analyzer=='SCA'`) and DAST (`scanType=='Dynamic'`) issues. Exclude SCA / open source findings (FoD `scanType=='OpenSource'`, SSC `analyzer=='Open Source'`) from the target set. If the user's request is about open source dependencies, vulnerable components, or CVEs, stop here and direct them to the `fortify-dependency-upgrade` skill.
 
 Keep the target set to related issues that can be addressed in a single pass. Mixing unrelated issue types or too many categories in one batch leads to unfocused, harder-to-review changes. See `references/issue-targeting.md` for how to group by type and category.
 
@@ -97,10 +101,7 @@ Do NOT proceed to Step 2 until the user has confirmed the target issue set.
 
 ## Step 2: Plan the Fix
 
-Load the reference file for your scan type and follow it to completion. Each file owns the full planning workflow — all retrieval, analysis, and fix formulation steps — as well as the Step 2 completion gate.
-
-- **SAST or DAST**: load `references/sast-dast-fix-planning.md`
-- **SCA / open source dependencies**: load `references/sca-fix-planning.md`
+Load `references/sast-dast-fix-planning.md` and follow it to completion. It owns the full planning workflow — all retrieval, analysis, and fix formulation steps — as well as the Step 2 completion gate.
 
 Return here for Step 3 when the reference file signals that planning is complete.
 
@@ -112,10 +113,9 @@ Always present the full remediation plan to the user before making any changes. 
 
 1. **Target issue list** — IDs, categories, severities, file/URL locations
 2. **Proposed changes** — for each: what file or config changes, what specifically changes, and the security rationale (e.g., "parameterize query to prevent injection" rather than "Fortify said to fix this")
-3. **Version upgrade strategy** (SCA only) — present both the minimum safe version and the latest non-breaking version options; include the user's choice as part of plan confirmation
-4. **Risk notes** — anything that may change behavior, break API contracts, require config updates, or affect downstream callers
-5. **Unit tests** — any new or updated tests you propose to add
-6. **Out of scope** — explicitly name any issues in the target set you're deferring and why (e.g., insufficient context, requires architectural change, appears to be a false positive needing review)
+3. **Risk notes** — anything that may change behavior, break API contracts, require config updates, or affect downstream callers
+4. **Unit tests** — any new or updated tests you propose to add
+5. **Out of scope** — explicitly name any issues in the target set you're deferring and why (e.g., insufficient context, requires architectural change, appears to be a false positive needing review)
 
 If you're uncertain about a fix, say so explicitly rather than guessing. It is better to flag ambiguity than to implement an incorrect fix.
 
@@ -125,10 +125,7 @@ If you're uncertain about a fix, say so explicitly rather than guessing. It is b
 
 ## Step 4: Implement and Verify
 
-Load the reference file for your scan type and follow it to completion. Each file owns the full implementation workflow and completion gate.
-
-- **SAST or DAST**: load `references/sast-dast-implementation.md`
-- **SCA / open source dependencies**: load `references/sca-implementation.md`
+Load `references/sast-dast-implementation.md` and follow it to completion. It owns the full implementation workflow and completion gate.
 
 ### Completion Summary
 
@@ -148,8 +145,6 @@ After the reference file signals Step 4 complete, return here and provide:
 | `references/fcli-query-output.md` | Detailed SpEL query syntax, null-safety patterns, output formats, `--store` variable chaining, server-side filtering, date utility functions |
 | `references/resolving-release.md` | When the user has not specified a release in FoD to target or when you need to confirm the correct release/version based on an ambiguous name. |
 | `references/resolving-appversion.md` | When the user has not specified an application version in SSC to target or when you need to confirm the correct release/version based on an ambiguous name. |
-| `references/issue-targeting.md` | How to select and group issues; "bang for buck" heuristics; how to handle general vs specific requests; Fortify taxonomy guide; SAST vs DAST vs SCA mixing rules |
+| `references/issue-targeting.md` | How to select and group issues; "bang for buck" heuristics; how to handle general vs specific requests; Fortify taxonomy guide; SAST vs DAST mixing rules |
 | `references/sast-dast-fix-planning.md` | SAST and DAST fix planning (Step 2); retrieving Aviator AI guidance (FoD); reading and interpreting SAST traces; codebase analysis patterns; unit test guidance |
-| `references/sca-fix-planning.md` | SCA/open source dependency fix planning (Step 2); collecting CVEs; selecting the minimum safe upgrade version; breaking change analysis |
 | `references/sast-dast-implementation.md` | SAST and DAST implementation (Step 4); apply-build-test loop; code comment guidelines; completion gate |
-| `references/sca-implementation.md` | SCA dependency implementation (Step 4); package manager commands by ecosystem; transitive dependency handling; build and verification checklist |
