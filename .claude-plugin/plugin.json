@@ -14,6 +14,8 @@
     "./skills/fortify-exploitability-analysis/",
     "./skills/fcli-common/",
     "./skills/fortify-remediate/",
+    "./skills/fortify-dependency-upgrade/",
+    "./skills/fortify-change-review/",
     "./skills/fortify-create-app/",
     "./skills/fortify-cicd-integration/"
   ],
