@@ -90,13 +90,18 @@ release-please automatically bumps these files on release:
 
 Each skill has its own version in `metadata.version` in the SKILL.md frontmatter. Bump it manually when you change the skill's content.
 
-A CI check on pull requests verifies that `metadata.version` was bumped when skill content files changed. If you only change `SKILL.md` itself (e.g., description tweak), the check still flags it — update the version accordingly.
+The CI check compares the current skill content against the **last published release tag** (not the previous commit). This means:
+
+- **New skills** (not present in any release yet) never need a version bump — they start at `1.0.0` and the CI check is skipped until after the first release.
+- **Existing skills** require exactly **one** version bump per release cycle. Once you bump the version after the last release, you can keep making changes without bumping again until the next release ships.
+
+In practice: bump `metadata.version` the first time you change a skill after a release. Any further changes to that skill before the next release do not require another bump.
 
 ### Release Flow
 
 1. Develop on a feature branch, using conventional commit messages
-2. Bump `metadata.version` in any SKILL.md files you changed
-3. Open a PR — CI checks skill version bumps
+2. Bump `metadata.version` in any SKILL.md files you changed (once per release cycle — not once per commit)
+3. Open a PR — CI checks skill version bumps against the last release
 4. Merge to `main` — release-please opens/updates a release PR with bumped `version.txt`, `CHANGELOG.md`, and JSON files
 5. Merge the release PR — release-please creates a GitHub release with a git tag
 

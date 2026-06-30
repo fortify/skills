@@ -92,7 +92,7 @@ When developing skills, you can invoke `fcli` directly to explore its commands a
 
 Overall version is managed by [release-please](https://github.com/googleapis/release-please) via conventional commits. Individual skill versions are maintained in `metadata.version` in each SKILL.md frontmatter.
 
-- CI checks that `metadata.version` is bumped when skill content changes
+- CI checks that `metadata.version` is bumped when skill content changes — but only once per release cycle. The check compares against the **last published release tag**, so: bump the version the first time you change a skill after a release; do not bump again for further changes before the next release. New skills (not yet in any release) never need a version bump.
 - release-please auto-bumps `version.txt` and all JSON version fields on release
 - **Do not use commit scopes.** The release tooling does not support a parenthesized scope/component (e.g. `feat(fortify-fod): …` is **not** supported). Use the plain type only (`feat:`, `fix:`) and name the affected skill in the description.
 
