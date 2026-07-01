@@ -19,9 +19,9 @@ jobs:
       - name: Verify skill versions bumped for changed skills
         run: |
           # Compare against the last release tag so that multiple commits within
-          # a single release cycle only require one version bump.  Skills that
-          # did not exist in the last release are always skipped (version starts
-          # at 1.0.0 and need not be bumped until the skill is first released).
+          # a single release cycle only require one version bump.  New skills
+          # (not present in the last release) must stay at 1.0.0 until first
+          # release — intermediate version bumps for new skills are not allowed.
           latest_tag=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.' | head -1 || true)
 
           if [ -z "$latest_tag" ]; then
@@ -36,9 +36,16 @@ jobs:
             [ -d "$skill_dir" ] || continue
             skill_name=$(basename "$skill_dir")
 
-            # Skip skills that did not exist at the last release (new skills).
+            # New skills (not present in last release) must stay at 1.0.0.
             if ! git cat-file -e "${latest_tag}:${skill_dir}SKILL.md" 2>/dev/null; then
-              echo "Skill '$skill_name' is new since '$latest_tag' — no version bump required"
+              version_current=$(grep -E '^\s+version:' "${skill_dir}SKILL.md" | head -1 \
+                | sed 's/.*version: *//' | tr -d '"' | xargs)
+              if [ "$version_current" != "1.0.0" ]; then
+                echo "::error::Skill '$skill_name' is new (not in release '$latest_tag') but metadata.version is '$version_current' — must be '1.0.0' until first release"
+                exit_code=1
+              else
+                echo "Skill '$skill_name' is new since '$latest_tag' — version is 1.0.0 as required"
+              fi
               continue
             fi
 

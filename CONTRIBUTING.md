@@ -92,7 +92,7 @@ Each skill has its own version in `metadata.version` in the SKILL.md frontmatter
 
 The CI check compares the current skill content against the **last published release tag** (not the previous commit). This means:
 
-- **New skills** (not present in any release yet) never need a version bump — they start at `1.0.0` and the CI check is skipped until after the first release.
+- **New skills** (not present in any release yet) must declare `metadata.version: "1.0.0"` and must **not** bump the version before the first release. The CI check enforces this constraint.
 - **Existing skills** require exactly **one** version bump per release cycle. Once you bump the version after the last release, you can keep making changes without bumping again until the next release ships.
 
 In practice: bump `metadata.version` the first time you change a skill after a release. Any further changes to that skill before the next release do not require another bump.
