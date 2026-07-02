@@ -13,24 +13,7 @@ Per Fortify licensing:
 > or **(2) the most recent individual who has made changes to the application code
 > if no code commits have been made in the past 90 days.**
 
-In practice this is two criteria:
-
-- **Criterion 1 — active contributors.** Anyone with at least one commit in the
-  trailing 90-day window is counted.
-- **Criterion 2 — last committer on dormant repos.** If a repository has had **no
-  commits in the past 90 days**, the person with the most recent commit is *still*
-  counted, even if that commit is much older. This commonly catches:
-  - contributors on stale feature branches,
-  - maintainers of archived or dormant projects,
-  - occasional contributors to long-stable repositories.
-
-**Why counts look high.** Criterion 2 is the usual reason a count is higher than
-expected. When questioning a result, check whether:
-1. the reporting domain includes repositories that should be excluded (archived
-   projects, examples, test harnesses);
-2. contributors should be marked `IGNORED` for repos that shouldn't count toward the
-   license;
-3. stale branches are pulling in dormant last-committers (Criterion 2).
+Note that criterion 2 is often overlooked; if a repository has had **no commits in the past 90 days**, the person with the most recent commit is *still* counted, even if that commit is much older.
 
 ## Reporting domain
 
@@ -43,13 +26,12 @@ expected. When questioning a result, check whether:
   (single-run) or by merging team reports (federated).
 
 When merging, every source report (and every repository in it) must belong to the
-**same** reporting domain. Never mix an org-wide report with a department report.
+**same** reporting domain / NCD license agreement.
 
 ## Execution models
 
 - **Single-run model** — one `create` config processes all repositories in the
-  domain in a single run. Prefer when repository metadata is clean and centrally
-  managed, one automation identity can read the full SCM scope, and a single
+  reporting domain in a single run. Prefer when repository metadata is clean and centrally managed, one automation identity can read the full SCM scope, and a single
   repeatable scheduled run is wanted.
 - **Federated model** — teams or departments generate separate source reports that
   are later merged into one domain result. Prefer when team/department boundaries
@@ -94,10 +76,10 @@ proceeding.
 
 A generated or merged report (zip or directory) contains:
 
-- `summary.txt` — author, commit, and repository totals
+- `summary.txt` — author, commit, ,repository totals, report end date
 - `contributors.csv` — the contributor list
 - `checksums.sha256` — integrity checksums (validated by `update-contributor-status`)
-- `report-config.yaml` — the effective config, including `endDate`
+- `report-config.yaml` — the effective config
 - `details/repositories.csv`
 - `details/commits-by-branch.csv`
 - `details/commits-by-repository.csv`

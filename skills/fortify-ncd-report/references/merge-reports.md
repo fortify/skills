@@ -23,7 +23,7 @@ domain (all org-wide, or all department-X — never a mix). Ask explicitly if th
 any doubt. See [concepts.md](concepts.md).
 
 **Verify the reporting period.** Confirm all source reports use the **same** end date.
-Extract `report-config.yaml` from each and check its `endDate`. If dates differ, warn
+Extract `summary.txt` from each and check its `endDate`. If dates differ, warn
 that merged totals may mix reporting windows, and ask whether to merge anyway or rerun
 producers with aligned dates.
 
