@@ -5,8 +5,8 @@ license: MIT
 metadata:
   version: "1.0.0"
   tested-with:
-    fcli: "3.21"
-argument-hint: "task (generate / merge / review), SCM platform, Fortify platform, role (producer or consolidator), report date"
+    fcli: "3.23"
+argument-hint: "task (explain / prepare-config / generate / merge / review), report path(s) or wildcard(s), SCM platform, Fortify platform, report date"
 ---
 
 # Fortify NCD Reports
@@ -23,16 +23,22 @@ the `fcli license ncd-report` command family: explain reporting process, author 
 - Always ask user to confirm auto-discovered or inferred values before proceeding. Never assume the user's intent.
 - Infer any required task inputs from the prompt and environment first, then explicitly confirm before proceeding.
 - When doing manual CSV parsing, always validate that CSV parsing approach is accurate, for example by matching CSV parsing output of `contributors.csv` against `fcli license ncd-report list-contributors -o csv` output, or by comparing CSV parsing output against manual text searches against the same CSV file. Do not assume that CSV parsing is correct without validation.
+- For explain/validation analyses, never present zero-candidate conclusions until parser integrity has been validated and an independent second-pass check has been run; if checks disagree, mark results as inconclusive and explain why.
+- If user input is required and a distinct set of valid options exists, present an interactive choice list (clickable options in question/answer style, not a plain numbered list) and ask the user to select one. If applicable, include a "Custom" option for free-form input and/or a "Something else" option to break out of the list. Fall back to a numbered list only if the runtime does not support interactive choice prompts.
+- When interactive choice prompts are available, do not duplicate the same choice list in normal narrative output.
+- Keep question dialog content strictly to the question and selectable options; put recommendations, handoff guidance, and explanatory notes in separate normal chat output.
 
 ## Tasks
 
 For reference in `Mandatory Workflow` section below only; do not pre-load or execute any of these tasks until the workflow calls for it.
 
-| User intent | Task | Load |
-|-------------|------|------|
-| Create a new report (single-run, or a producer's team report) | **Generate** | [references/generate-report.md](references/generate-report.md) |
-| Combine several team/department reports into one domain result | **Merge** | [references/merge-reports.md](references/merge-reports.md) |
-| Export, explain, validate, or correct contributors in an existing report | **Review & amend** | [references/review-amend-report.md](references/review-amend-report.md) |
+| User intent | Task | Load | Requires fcli |
+|-------------|------|------|---------------|
+| Explain NCD reporting process, concepts, or details | **Explain** | [references/explain.md](references/explain.md) | No |
+| Create a new `NcdReportConfig.yml` or update an existing one | **Prepare config** | [references/prepare-config.md](references/prepare-config.md) | Yes |
+| Run a report from an existing `NcdReportConfig.yml` | **Generate report** | [references/generate-report.md](references/generate-report.md) | Yes |
+| Combine several team/department reports into one domain result | **Merge** | [references/merge-reports.md](references/merge-reports.md) | Yes |
+| Export, explain, validate, or correct contributors in an existing report | **Review & amend** | [references/review-amend-report.md](references/review-amend-report.md) | Yes |
 
 ## Mandatory Workflow
 
@@ -41,42 +47,45 @@ Complete each step before proceeding. Do not skip steps.
 ### Step 1 — Identify your task
 
 Identify whether user's intent unambiguously matches one of the tasks listed in the Tasks table above. **DO NOT** attempt to clarify user's intent in this step; just check for a clear match.
-- If no clear match, continue to step 2a.
+- If no clear match, continue to step 2.
 - If clear match, continue to step 3.
 
-### Step 2 — Clarify user's intent
+### Step 2 — Choose task
 
-#### Step 2a — Offer to explain NCD reporting process
-If user's intent is not specified, ambiguous, or if there's any indication that user isn't sure about what task to perform, ask them whether they'd like to see an explanation of NCD reporting process first:
-- If confirmed, continue to step 2b
-- If denied, continue to step 2c
+Inform user that it's recommended to run the explain task first if they haven't done so before, to explain reporting workflow and execution models. Then ask the user to choose a task by providing a choice list containing each of the tasks listed in the Tasks table above together with short descriptions. 
 
-#### Step 2b — Explain NCD reporting process
-Load [references/concepts.md](references/concepts.md) and provide user with concise, clear, non-technical explanation of NCD model, reporting domain, execution models, roles, dormant-repo edge cases, and report file inventory. Then, continue to step 2c.
-
-#### Step 2c — Ask user to clarify intent
-Ask user fewest amount of questions to clarify their intent, and provide a list of the three tasks (generate, merge, review/amend) with brief descriptions. If user still cannot clarify, offer to explain NCD reporting process again, in more detail if necessary (step 2b).
-
-Once intent is clear, continue to step 3.
+After a task is explicitly selected, treat it as the active task and keep it locked for this run. Do not ask for task selection again unless the user explicitly asks to switch tasks or the current task workflow explicitly redirects back to task selection. Once a task has been chosen by the user, continue to step 3.
 
 #### Step 2 gate
-- [ ] User intent clarified and task identified (generate, merge, or review/validate/explain/amend)
+- [ ] User's intent clarified and task identified (explain, prepare-config, generate, merge, or review/amend)
 
-### Step 3 — Ensure fcli is available
-Check that `fcli` is installed and available in the current environment, and `fcli -V` returns version 3.21.0 or above. If not, use the instructions in [references/fcli-install.md](references/fcli-install.md) to install or upgrade `fcli`.
+### Step 3 - Ensure fcli is available if required
+Note the task identified in Step 1 or Step 2. Do not re-prompt for task selection after completing Step 3a; resume directly at Step 4 with that same task.
 
-Continue to step 4.
+Check whether the task requires `fcli` (see Tasks table above):
+- If yes, continue to step 3a.
+- If no, skip to step 4.
 
-#### Step 3 gate
-- [ ] fcli v3.21.0 or above is installed and available
+#### Step 3a — Ensure fcli is available
+Check that `fcli` is installed and available in the current environment, and `fcli -V` returns version 3.23.0 or above. If not, use the instructions in [references/fcli-install.md](references/fcli-install.md) to install or upgrade `fcli`.
+
+Continue to step 4, using the task identified in Step 1 or Step 2. Never re-prompt for task selection after completing Step 3a; resume directly at Step 4 with that same task.
+
+##### Step 3a gate
+- [ ] fcli v3.23.0 or above is installed and available
 
 ### Step 4 — Execute requested task
 Load the reference file for the requested task and follow it end to end. Do not skip steps or improvise. Always apply non-negotiable rules and completion gates listed in the reference files.
 
 #### Step 4 gate
 - [ ] Task completed successfully, all steps in reference file executed
+- [ ] If Explain was executed, control returned to Step 2 and next task selection was requested
 
-## Cross-skill dependencies
+### Step 5 — Confirm completion and next steps
+Ask the user whether they want to:
+- perform another task (return to Step 1 if explicit intent given, or Step 2 to show task selection dialog if intent is unclear),
+- exit the skill (end session)
 
-- `fortify-fod` / `fortify-ssc` — deeper FoD/SSC portfolio analysis when comparing
-  repositories against Fortify inventory.
+If the active task reference already instructs a next-action choice list,
+do not present a second separate list. Present a single consolidated choice
+list with unique numbering.

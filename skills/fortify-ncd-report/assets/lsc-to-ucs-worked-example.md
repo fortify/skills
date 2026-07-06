@@ -12,10 +12,10 @@
 
 This example shows a small contributor export, the reasoning a reviewer or AI should apply, and the minimal JSON update payload to feed into `update-contributor-status`.
 
-## Step 1: Export contributors from the report
+## Step 1: Export contributing users from the report
 
 ```bash
-fcli license ncd-report list-contributors -r ncd-report.zip -o json --to-file contributors.json
+fcli license ncd-report list-contributors -r ncd-report.zip -q "contributionStatus=='contributing'" -o json --to-file contributors-contributing.json
 ```
 
 Example exported rows:
@@ -62,31 +62,40 @@ In this example:
 - `build-bot[bot]` is likely non-human and should be ignored.
 - `John Smith` remains unchanged, so it should not appear in the update payload.
 
-## Step 3: Generate the minimal `ucs` input
+## Step 3: Generate review output with apply-now and manual-review sections
 
-Only changed rows should be emitted:
+Use one LLM response that separates high-confidence apply-now updates from medium-confidence manual-review candidates:
 
 ```json
-[
-  {
-    "authorId": "8c2f89b3277043e0a39b1ae5389035e7",
-    "duplicateOf": "f7b4e6f4f9d14db2a3f2d541eb9f1c01",
-    "overrideStatus": "duplicate",
-    "overrideStatusConfidence": "0.95",
-    "overrideStatusNotes": "Likely same human contributor as John Smith; abbreviated first name and matching surname/email naming pattern."
-  },
-  {
-    "authorId": "42bd1e85a0e747cc935dd0fa0d093a0b",
-    "overrideStatus": "ignored",
-    "overrideStatusConfidence": "0.99",
-    "overrideStatusNotes": "Bot marker '[bot]' in the author name and noreply automation address indicate a non-human account."
+{
+  "proposedUpdates": [
+    {
+      "authorId": "8c2f89b3277043e0a39b1ae5389035e7",
+      "duplicateOf": "f7b4e6f4f9d14db2a3f2d541eb9f1c01",
+      "overrideStatus": "duplicate",
+      "overrideStatusConfidence": "0.95",
+      "overrideStatusNotes": "Likely same human contributor as John Smith; abbreviated first name and matching surname/email naming pattern."
+    },
+    {
+      "authorId": "42bd1e85a0e747cc935dd0fa0d093a0b",
+      "overrideStatus": "ignored",
+      "overrideStatusConfidence": "0.99",
+      "overrideStatusNotes": "Bot marker '[bot]' in the author name and noreply automation address indicate a non-human account."
+    }
+  ],
+  "manualReviewCandidates": [],
+  "summary": {
+    "duplicateHigh": 1,
+    "ignoredHigh": 1,
+    "duplicateMedium": 0,
+    "ignoredMedium": 0
   }
-]
+}
 ```
 
 ## Step 4: Apply the reviewed updates
 
-Save the reviewed JSON to a file such as `contributors-reviewed.json`, then run:
+Save `proposedUpdates` to a file such as `contributors-reviewed.json`, then run:
 
 ```bash
 fcli license ncd-report update-contributor-status -r ncd-report.zip -c contributors-reviewed.json --min-confidence 0.90
@@ -107,6 +116,6 @@ fcli license ncd-report list-contributors -r ncd-report.zip -o json
 
 - Preserve `authorId` values exactly.
 - Point `duplicateOf` to another existing `authorId` from the same export.
-- Output only changed rows.
+- Keep apply-now updates in `proposedUpdates` and medium-confidence items in `manualReviewCandidates`.
 - Include confidence and notes for every AI-suggested change.
 - Keep the review conservative; when evidence is weak, leave the row unchanged.

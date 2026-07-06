@@ -96,9 +96,7 @@ customer uses FoD or SSC, ask — don't assume both. For deeper analysis, activa
 
 ## Step 4: Generate the config scaffold
 
-If reusing an existing config as-is, skip to running the report. If adjusting an
-existing config, treat it as the source artifact and change only what's needed.
-Otherwise generate a stub:
+If adjusting an existing config, treat it as the source artifact and change only what's needed. Otherwise generate a stub:
 
 ```bash
 fcli license ncd-report create-config -y -c NcdReportConfig.yml -o yaml
@@ -189,57 +187,10 @@ contributor:
     a1.cleanName==a2.cleanEmailName
 ```
 
-## Step 5: Credential handling
+## Step 5: SCM credential handling
 
-Prefer environment variables and platform CLI auth reuse. Avoid `read -sp` in VS Code
-terminals (unreliable).
-
-### Step 5a: Choose token acquisition strategy
-
-Prefer the lightest secure path in this order:
-
-1. **Use an existing CI-provided environment variable** if already present.
-2. **Reuse an existing authenticated CLI session**:
-   - GitHub: check `gh auth status`; if authenticated, use `gh auth token`.
-   - GitLab: check `glab auth status`; if authenticated, use `glab auth token`.
-3. **Manual token entry** into a local env file opened in editor.
-
-For Azure DevOps, there is no equally standard token print command like `gh auth token`
-or `glab auth token`. Prefer an existing PAT environment variable, or have the user add
-their PAT manually to the env file workflow below.
-
-Never print token values to logs, markdown output, or chat messages.
-
-### Step 5b: Use a local env file workflow (recommended)
-
-When token env vars are missing, create a temporary env file template and have the user
-fill secrets locally:
-
-```bash
-cat > /tmp/.ncd-creds <<'EOF'
-export GITHUB_TOKEN=
-export GITLAB_TOKEN=
-export AZURE_DEVOPS_TOKEN=
-EOF
-chmod 600 /tmp/.ncd-creds
-```
-
-Then:
-- Ask the user to open and edit `/tmp/.ncd-creds` locally.
-- Load secrets into the shell with `source /tmp/.ncd-creds`.
-- Run report commands.
-- Remove the file after use: `rm -f /tmp/.ncd-creds`.
-
-If `gh` or `glab` is authenticated, users may populate the file without exposing values
-to the model, for example by running commands directly in terminal when editing.
-
-### Step 5c: Verify referenced env vars before report execution
-
-Before running `create` or handing off to merge, verify that every token referenced by
-`#env("...")` in `NcdReportConfig.yml` is set in the current shell.
-
-Never request secrets through tools that route input through the model. The user should
-type secrets directly into the terminal or editor.
+Load [scm-credential-handling.md](scm-credential-handling.md) and follow it to acquire
+and verify SCM authentication tokens for config discovery and repository access.
 
 ## Discovery + config gate
 
@@ -248,5 +199,4 @@ type secrets directly into the terminal or editor.
       sections clearly marked)
 - [ ] If Fortify metadata was used: attribute scope and name confirmed with user
 - [ ] Credentials externalized via `#env(...)`
-- [ ] Token acquisition strategy selected (CLI reuse, existing env, or manual env file)
-- [ ] Referenced token env vars verified as set before report execution
+- [ ] Credential handling gate from [scm-credential-handling.md](scm-credential-handling.md) passed

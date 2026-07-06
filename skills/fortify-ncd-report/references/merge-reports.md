@@ -9,6 +9,18 @@ The `merge` command reuses contributor expressions and performs cross-report
 deduplication — but review the merged output rather than assuming the counts are
 automatically correct.
 
+## Non-negotiable rules
+
+- Apply non-negotiable rules from [../SKILL.md](../SKILL.md)
+
+## Overall process
+
+Use this high-level flow when explaining Merge:
+
+1. Collect source reports and verify domain, end-date alignment, and completeness.
+2. Merge the source reports into one domain result.
+3. Review merged summary counts and deduplication outcome.
+
 ## Step 1: Collect source reports and verify requirements
 
 **Identify all source reports.** Ask for the exact paths, or discover them:
@@ -23,9 +35,8 @@ domain (all org-wide, or all department-X — never a mix). Ask explicitly if th
 any doubt. See [concepts.md](concepts.md).
 
 **Verify the reporting period.** Confirm all source reports use the **same** end date.
-Extract `summary.txt` from each and check its `endDate`. If dates differ, warn
-that merged totals may mix reporting windows, and ask whether to merge anyway or rerun
-producers with aligned dates.
+Prefer `fcli license ncd-report get-summary -r <report>` for each source report and check `reportEndDate`.
+If dates differ, warn that merged totals may mix reporting windows, and ask whether to merge anyway or rerun producers with aligned dates.
 
 **Verify completeness.** Confirm all expected source reports were received. If some are
 missing, note explicitly that merged totals are partial.
@@ -48,14 +59,15 @@ Use `-d full-report` for directory output only if the user explicitly wants it.
 
 ## Step 3: Review the merged result
 
-- Check `summary.txt` in the merged report for total author, commit, and repository
-  counts.
+- Prefer `fcli license ncd-report get-summary -r full-report.zip` and verify total author,
+  commit, and repository counts, including dormant counts.
 - Verify cross-report deduplication looks sensible — the merged set should not show
-  duplicate team members. Compare against the known domain size if possible.
+  duplicate team members. Compare against the known domain size if possible, and use
+  `fcli license ncd-report list-contributors -r full-report.zip -o csv` for spot checks.
 
 ### Step 3 gate
 - [ ] Merge succeeded
-- [ ] Merged summary reviewed
+- [ ] Merged summary reviewed (including dormant counts)
 - [ ] Cross-report deduplication looks correct
 
 ## Completion

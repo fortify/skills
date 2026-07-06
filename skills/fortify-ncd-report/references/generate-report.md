@@ -1,82 +1,69 @@
 # Task: Generate an NCD Report
 
-Use this workflow to **create a new report** — either a single-run org-wide report,
-or a producer's team/department report in a federated model. To merge existing
-reports instead, use [merge-reports.md](merge-reports.md). For definitions of model,
-role, domain, and the NCD count, see [concepts.md](concepts.md).
-
-> Confirm model and role before gathering details. Don't start repo discovery until
-> scope and reporting period are agreed.
+Use this workflow to **run `fcli license ncd-report create`** from an existing,
+complete `NcdReportConfig.yml`. To create or update the config first, use
+[prepare-config.md](prepare-config.md). To merge existing reports instead, use
+[merge-reports.md](merge-reports.md). For definitions of model, role, domain, and
+the NCD count, see [concepts.md](concepts.md).
 
 ## Non-negotiable rules
 
-- For new config creation, **must** run:
-  `fcli license ncd-report create-config -y -c NcdReportConfig.yml -o yaml`.
-  Do **not** hand-scaffold a fresh `NcdReportConfig.yml` from memory.
-- If an existing config is being adjusted, edit that file in place; do not replace it with a brand-new hand-written scaffold.
+- Apply non-negotiable rules from [../SKILL.md](../SKILL.md)
 
-## Step 1: Confirm execution model and role
+## Overall process
 
-Infer the execution model (single-run vs federated) and your role (producer,
-consolidator, or both) from the user's request and environment, then confirm.
+1. Locate and confirm the config to use.
+2. Confirm the reporting period end date.
+3. Confirm report output location.
+4. Verify pre-flight requirements (token env vars, auth).
+5. Run the report.
+6. Validate output files and counts.
 
-- Use the role inference cheat sheet in [concepts.md](concepts.md).
-- Check the environment:
-  - `find . -name "NcdReportConfig.yml"` — existing config implies a rerun.
-  - `fcli fod session ls --query "expired=='No'"` / `fcli ssc session ls --query "expired=='No'"`
-    — whether a Fortify platform is available for comparison.
+## Step 1: Locate and confirm config
 
-If ambiguous, ask in order:
-1. A report for the entire organization, or for a team/department? (→ model)
-2. Will other teams also generate reports to be merged, or are you the only producer?
-   (→ role)
+Ask or auto-detect the config to use:
+- Run `find . -name "NcdReportConfig.yml"` to locate candidate files.
+- If exactly one is found, present the path and ask the user to confirm or specify a different path.
+- If multiple are found, ask the user to select from the list or specify a different path.
+- If none are found, ask the user to provide the config path, or offer to switch to
+  the **Prepare config** task first.
 
 ### Step 1 gate
-- [ ] Execution model confirmed (single-run or federated)
-- [ ] Role confirmed (producer, consolidator, or both)
+- [ ] Config file path confirmed
 
-## Step 2: Establish scope and reporting period
+## Step 2: Confirm reporting period end date
 
-**Reporting domain.** Confirm which repositories this report covers (org-wide, or a
-specific department). See [concepts.md](concepts.md).
+Confirm the 90-day window's end date. Offer:
+- **Last completed quarter** (e.g. `2026-03-31`) — recommended for federated
+  producers so reports merge with aligned dates.
+- **Last completed month** — for faster iteration.
+- **Current cycle** (today) — for a snapshot now.
+- **Specific historical date** — user supplies `yyyy-MM-dd`.
 
-**Reporting period.** Confirm the 90-day window's end date:
-- For a **federated producer**, recommend the **last completed quarter**
-  (e.g. `2026-03-31`) so reports merge with aligned dates.
-- **Last completed month** for faster iteration.
-- **Current cycle** (today) for a snapshot now.
-- A **specific historical date** for a particular 90-day window.
-
-Historical reports use `--end-date yyyy-MM-dd` as the inclusive end of the window. In
-federated mode, all producers must use the **same** end date.
-
-**Fortify platform (if comparing).** If the user named FoD or SSC, use it. Otherwise
-check active sessions (above): only FoD active → FoD; only SSC → SSC; both → ask;
-neither → offer to skip Fortify comparison.
-
-**Existing config.** If the user already has an `NcdReportConfig.yml`, ask whether it
-can be reused as-is (skip to Step 4) or needs adjustment (use it as the starting point
-in Step 3).
+Historical reports use `--end-date yyyy-MM-dd` as the inclusive end of the window.
+In **federated mode**, all producers should use the **same** end date.
 
 ### Step 2 gate
-- [ ] Reporting domain confirmed
 - [ ] Reporting period (end date) confirmed
-- [ ] Fortify platform identified or comparison intentionally skipped
-- [ ] Existing config status decided (reuse as-is / adjust / create new)
 
-## Step 3: Discover repositories and author the config
+## Step 3: Confirm report output location
 
-Skip if reusing a config as-is. Otherwise load
-[discovery-and-config.md](discovery-and-config.md) and follow it to discover the
-in-scope repositories and produce or adjust `NcdReportConfig.yml`. Return here once
-the discovery + config gate in that file passes.
+Confirm where to write the report output. Offer:
+- `<config file dir>/ncd-report-<enddate>.zip`.
+- `<cwd>/ncd-report-<enddate>.zip`.
+- **Alternative output location**.
 
-For any new config path, do not hand-author `NcdReportConfig.yml` first. The workflow
-must execute `create-config` and then edit the generated file.
+For **Alternative output location**, resolve as follows:
+- If the provided path ends with `.zip`, use it as-is for zip output (`-z`).
+- If the provided path is an existing directory, check contents:
+  - If existing report dir (`summary.txt`, `contributors.csv`, and `checksums.sha256` all present), use as-is for directory output (`-d`) with auto-replace (`-y`).
+  - Otherwise, use `<dir>/ncd-report-<enddate>.zip`
+- If the provided path does not exist, use it as-is for directory output (`-d`).
 
-## Step 4: Run the report
+### Step 3 gate
+- [ ] Output location confirmed
 
-### Step 4 prerequisites
+## Step 4: Pre-flight checks
 
 Before running `fcli license ncd-report create`, confirm:
 
@@ -85,18 +72,21 @@ Before running `fcli license ncd-report create`, confirm:
 - Repository selection is intentional: include only repos in the reporting domain
   that should count for Fortify licensing, unless the user explicitly requests a
   broader scope.
-- Tokens referenced by `#env("...")` in `NcdReportConfig.yml` are defined in the
-  environment.
 - Authentication path is explicit: use authenticated SCM access by default; use
   unauthenticated access only if the user explicitly asks for it.
+
+Load [scm-credential-handling.md](scm-credential-handling.md) and follow it to acquire
+and verify SCM authentication tokens referenced by `#env("...")` in `NcdReportConfig.yml`.
 
 ### Step 4 gate
 - [ ] Config completeness verified
 - [ ] Repository scope validated with user
-- [ ] Referenced token environment variables are set
+- [ ] Credential handling gate from [scm-credential-handling.md](scm-credential-handling.md) passed
 - [ ] Authenticated access path confirmed (or explicit user-approved exception)
 
-Prefer zip output. Run the report:
+## Step 5: Run the report
+
+Prefer zip output. Run the report using config file, end date, and output location identified in previous steps:
 
 ```bash
 # Current cycle
@@ -109,34 +99,37 @@ fcli license ncd-report create -y -c NcdReportConfig.yml -z ncd-report-2026Q1.zi
 Use `-d <dir>` instead of `-z <file>.zip` only if the user explicitly wants directory
 output.
 
-## Step 5: Validate the output
+### Step 5 gate
+- [ ] Report generation completed without errors
 
-Confirm the report contains the expected files (see the inventory in
-[concepts.md](concepts.md)): `summary.txt`, `contributors.csv`, `checksums.sha256`,
-`report-config.yaml`, and the four `details/*.csv` files.
+## Step 6: Validate the output
+
+Confirm the report contains the expected files: `summary.txt`, `contributors.csv`, `checksums.sha256`, and `details/*.csv`.
 
 Review and validate:
-- Check author, commit, and repository counts in `summary.txt` for obvious scope
-  mistakes.
-- Extract `details/repositories.csv` and compare the listed repos against your known
-  list.
+- Prefer command-level summary review:
+  - `fcli license ncd-report get-summary -r ncd-report.zip`
+  - Verify report end date and count sections, including dormant counts in `repositoryCounts` and `authorCounts`.
+- Use repository list output for scope validation:
+  - `fcli license ncd-report list-repositories -r ncd-report.zip -o csv`
+  - Compare listed repositories against the known list.
   - Missing repos → check `report.log` for auth failures, rate limits, or access
     errors.
-  - Unexpected repos → tighten `repositoryIncludeExpression` and rerun.
-- In federated mode, confirm the report uses the agreed end date.
+  - Unexpected repos → tighten `repositoryIncludeExpression` in the config and rerun
+    (use **Prepare config** task to update the config).
 
-If validation exposes problems, return to Step 2 or Step 3, adjust, and regenerate.
+If validation exposes problems, fix the config using the **Prepare config** task, then
+re-run this workflow.
 
-### Step 5 gate
+### Step 6 gate
 - [ ] Report generated successfully
 - [ ] Expected files present
-- [ ] Summary reviewed for obvious scope/count problems
+- [ ] Summary reviewed for obvious scope/count problems (including dormant counts)
 - [ ] Discovered repositories validated against the known list
 
 ## Completion
 
 Work is complete when:
-- model and role are documented;
 - repo inclusion logic is reproducible and credentials are externalized;
 - report files and summary are internally consistent;
 - **single-run** → the report is final;
