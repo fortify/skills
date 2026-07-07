@@ -90,13 +90,26 @@ release-please automatically bumps these files on release:
 
 Each skill has its own version in `metadata.version` in the SKILL.md frontmatter. Bump it manually when you change the skill's content.
 
-A CI check on pull requests verifies that `metadata.version` was bumped when skill content files changed. If you only change `SKILL.md` itself (e.g., description tweak), the check still flags it — update the version accordingly.
+The CI check compares the current skill content against the **last published release tag** (not the previous commit). This means:
+
+- **New skills** (not present in any release yet) must declare `metadata.version: "1.0.0"` and must **not** bump the version before the first release. The CI check enforces this constraint.
+- **Existing skills** require the version to be bumped at least once per release cycle when content changes. The CI check does not enforce how many times you bump — only that the current version differs from the released one.
+
+When choosing how much to bump, follow standard semver conventions:
+
+| Change type | Bump |
+|-------------|------|
+| Fix or wording improvement | Patch (`1.0.0` → `1.0.1`) |
+| New feature or behaviour | Minor (`1.0.0` → `1.1.0`) |
+| Breaking / incompatible change | Major (`1.0.0` → `2.0.0`) |
+
+Within a single release cycle you may need to bump more than once. For example: if a released skill is at `1.0.0` and you first fix wording (bump to `1.0.1`), then later add a new feature in the same cycle, you must re-bump to `1.1.0` — the final released version should reflect the highest-impact change made since the last release.
 
 ### Release Flow
 
 1. Develop on a feature branch, using conventional commit messages
-2. Bump `metadata.version` in any SKILL.md files you changed
-3. Open a PR — CI checks skill version bumps
+2. Bump `metadata.version` in any SKILL.md files you changed, following the semver table above; re-bump within the cycle if a later change warrants a higher semver level
+3. Open a PR — CI checks skill version bumps against the last release
 4. Merge to `main` — release-please opens/updates a release PR with bumped `version.txt`, `CHANGELOG.md`, and JSON files
 5. Merge the release PR — release-please creates a GitHub release with a git tag
 

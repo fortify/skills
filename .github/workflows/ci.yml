@@ -18,34 +18,51 @@ jobs:
 
       - name: Verify skill versions bumped for changed skills
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            base=${{ github.event.pull_request.base.sha }}
-          else
-            base=${{ github.event.before }}
-          fi
+          # Compare against the last release tag so that multiple commits within
+          # a single release cycle only require one version bump.  New skills
+          # (not present in the last release) must stay at 1.0.0 until first
+          # release — intermediate version bumps for new skills are not allowed.
+          latest_tag=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.' | head -1 || true)
 
-          # Skip check on initial push (no previous commit) or force-push
-          if [ "$base" = "0000000000000000000000000000000000000000" ]; then
-            echo "Initial or orphan push — skipping version check"
+          if [ -z "$latest_tag" ]; then
+            echo "No release tags found — skipping version check"
             exit 0
           fi
+
+          echo "Comparing skill versions against last release: $latest_tag"
 
           exit_code=0
           for skill_dir in skills/*/; do
             [ -d "$skill_dir" ] || continue
             skill_name=$(basename "$skill_dir")
 
-            # Check if any files in this skill changed (excluding SKILL.md itself)
-            changed=$(git diff --name-only "$base" -- "$skill_dir" \
+            # New skills (not present in last release) must stay at 1.0.0.
+            if ! git cat-file -e "${latest_tag}:${skill_dir}SKILL.md" 2>/dev/null; then
+              version_current=$(grep -E '^\s+version:' "${skill_dir}SKILL.md" | head -1 \
+                | sed 's/.*version: *//' | tr -d '"' | xargs)
+              if [ "$version_current" != "1.0.0" ]; then
+                echo "::error::Skill '$skill_name' is new (not in release '$latest_tag') but metadata.version is '$version_current' — must be '1.0.0' until first release"
+                exit_code=1
+              else
+                echo "Skill '$skill_name' is new since '$latest_tag' — version is 1.0.0 as required"
+              fi
+              continue
+            fi
+
+            # Check if any non-SKILL.md files in this skill changed since last release.
+            changed=$(git diff --name-only "${latest_tag}" HEAD -- "$skill_dir" \
               | grep -v 'SKILL.md$' || true)
 
             if [ -n "$changed" ]; then
-              # Content changed — did SKILL.md metadata.version change too?
-              version_bumped=$(git diff "$base" -- "${skill_dir}SKILL.md" \
-                | grep -E '^\+.*version:' || true)
+              # Content changed — verify metadata.version was bumped since last release.
+              version_at_tag=$(git show "${latest_tag}:${skill_dir}SKILL.md" \
+                | grep -E '^\s+version:' | head -1 \
+                | sed 's/.*version: *//' | tr -d '"' | xargs)
+              version_current=$(grep -E '^\s+version:' "${skill_dir}SKILL.md" | head -1 \
+                | sed 's/.*version: *//' | tr -d '"' | xargs)
 
-              if [ -z "$version_bumped" ]; then
-                echo "::error::Skill '$skill_name' has content changes but metadata.version in SKILL.md was not bumped"
+              if [ "$version_at_tag" = "$version_current" ]; then
+                echo "::error::Skill '$skill_name' has content changes since release '$latest_tag' but metadata.version in SKILL.md was not bumped (still $version_current)"
                 exit_code=1
               fi
             fi
