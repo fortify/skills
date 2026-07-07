@@ -23,7 +23,6 @@ the `fcli license ncd-report` command family: explain reporting process, author 
 - Always ask user to confirm auto-discovered or inferred values before proceeding. Never assume the user's intent.
 - Infer any required task inputs from the prompt and environment first, then explicitly confirm before proceeding.
 - When doing manual CSV parsing, always validate that CSV parsing approach is accurate, for example by matching CSV parsing output of `contributors.csv` against `fcli license ncd-report list-contributors -o csv` output, or by comparing CSV parsing output against manual text searches against the same CSV file. Do not assume that CSV parsing is correct without validation.
-- For explain/validation analyses, never present zero-candidate conclusions until parser integrity has been validated and an independent second-pass check has been run; if checks disagree, mark results as inconclusive and explain why.
 - If user input is required and a distinct set of valid options exists, present an interactive choice list (clickable options in question/answer style, not a plain numbered list) and ask the user to select one. If applicable, include a "Custom" option for free-form input and/or a "Something else" option to break out of the list. Fall back to a numbered list only if the runtime does not support interactive choice prompts.
 - When interactive choice prompts are available, do not duplicate the same choice list in normal narrative output.
 - Keep question dialog content strictly to the question and selectable options; put recommendations, handoff guidance, and explanatory notes in separate normal chat output.
@@ -60,7 +59,7 @@ After a task is explicitly selected, treat it as the active task and keep it loc
 - [ ] User's intent clarified and task identified (explain, prepare-config, generate, merge, or review/amend)
 
 ### Step 3 - Ensure fcli is available if required
-Note the task identified in Step 1 or Step 2. Do not re-prompt for task selection after completing Step 3a; resume directly at Step 4 with that same task.
+Note the task identified in Step 1 or Step 2. Do not re-prompt for task selection after fcli availability has been confirmed (even if user deviated from the expected workflow); resume directly at Step 4 with that same task.
 
 Check whether the task requires `fcli` (see Tasks table above):
 - If yes, continue to step 3a.
@@ -69,10 +68,10 @@ Check whether the task requires `fcli` (see Tasks table above):
 #### Step 3a — Ensure fcli is available
 Check that `fcli` is installed and available in the current environment, and `fcli -V` returns version 3.23.0 or above. If not, use the instructions in [references/fcli-install.md](references/fcli-install.md) to install or upgrade `fcli`.
 
-Continue to step 4, using the task identified in Step 1 or Step 2. Never re-prompt for task selection after completing Step 3a; resume directly at Step 4 with that same task.
+Once fcli availability has been confirmed, continue to step 4 using the task identified in Step 1 or Step 2; never re-prompt for task selection.
 
 ##### Step 3a gate
-- [ ] fcli v3.23.0 or above is installed and available
+- [ ] fcli v3.23.0 or above, or user-requested fcli version, is installed and available
 
 ### Step 4 — Execute requested task
 Load the reference file for the requested task and follow it end to end. Do not skip steps or improvise. Always apply non-negotiable rules and completion gates listed in the reference files.
