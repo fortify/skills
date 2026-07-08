@@ -6,6 +6,8 @@ Source: https://fortify.github.io/fcli/latest/
 
 ## Option 1: Using `@fortify/setup` (Recommended)
 
+> **Provenance**: `@fortify/setup` is the official OpenText Fortify npm package, published under the `@fortify` npm scope by the Fortify team. Verify at https://www.npmjs.com/package/@fortify/setup.
+
 Requires Node.js (npx). Works in CI/CD pipelines and local development. Automatically
 downloads, verifies (RSA signature), and configures fcli.
 
@@ -55,7 +57,7 @@ Visit https://github.com/fortify/fcli/releases and download the appropriate asse
 
 > Note: Some browsers block `fcli-windows.zip` downloads — bypass the warning if prompted.
 
-### Verify Integrity (recommended)
+### Verify Integrity (required for production)
 
 Each asset has a corresponding `.sha256` and `.rsa_sha256` signature file.
 
