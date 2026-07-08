@@ -9,17 +9,13 @@ the NCD count, see [concepts.md](concepts.md).
 ## Non-negotiable rules
 
 - Apply non-negotiable rules from [../SKILL.md](../SKILL.md)
+- For `fcli license ncd-report create`, `fcli license ncd-report validate-sources`, and direct SCM REST calls, execute through mandatory [run-cmd-with-scm-auth.md](run-cmd-with-scm-auth.md) workflow.
 
-## Overall process
+## Mandatory Workflow
 
-1. Locate and confirm the config to use.
-2. Confirm the reporting period end date.
-3. Confirm report output location.
-4. Verify pre-flight requirements (token env vars, auth).
-5. Run the report.
-6. Validate output files and counts.
+Complete each step before proceeding. Do not skip steps.
 
-## Step 1: Locate and confirm config
+### Step 1: Locate and confirm config
 
 Ask or auto-detect the config to use:
 - Run `find . -name "NcdReportConfig.yml"` to locate candidate files.
@@ -28,10 +24,10 @@ Ask or auto-detect the config to use:
 - If none are found, ask the user to provide the config path, or offer to switch to
   the **Prepare config** task first.
 
-### Step 1 gate
+#### Step 1 gate
 - [ ] Config file path confirmed
 
-## Step 2: Confirm reporting period end date
+### Step 2: Confirm reporting period end date
 
 Confirm the 90-day window's end date. Offer:
 - **Last completed quarter** (e.g. `2026-03-31`) — recommended for federated
@@ -43,10 +39,10 @@ Confirm the 90-day window's end date. Offer:
 Historical reports use `--end-date yyyy-MM-dd` as the inclusive end of the window.
 In **federated mode**, all producers should use the **same** end date.
 
-### Step 2 gate
+#### Step 2 gate
 - [ ] Reporting period (end date) confirmed
 
-## Step 3: Confirm report output location
+### Step 3: Confirm report output location
 
 Confirm where to write the report output. Offer:
 - `<config file dir>/ncd-report-<enddate>.zip`.
@@ -60,10 +56,10 @@ For **Alternative output location**, resolve as follows:
   - Otherwise, use `<dir>/ncd-report-<enddate>.zip`
 - If the provided path does not exist, use it as-is for directory output (`-d`).
 
-### Step 3 gate
+#### Step 3 gate
 - [ ] Output location confirmed
 
-## Step 4: Pre-flight checks
+### Step 4: Pre-flight checks
 
 Before running `fcli license ncd-report create`, confirm:
 
@@ -75,16 +71,12 @@ Before running `fcli license ncd-report create`, confirm:
 - Authentication path is explicit: use authenticated SCM access by default; use
   unauthenticated access only if the user explicitly asks for it.
 
-Load [scm-credential-handling.md](scm-credential-handling.md) and follow it to acquire
-and verify SCM authentication tokens referenced by `#env("...")` in `NcdReportConfig.yml`.
-
-### Step 4 gate
+#### Step 4 gate
 - [ ] Config completeness verified
 - [ ] Repository scope validated with user
-- [ ] Credential handling gate from [scm-credential-handling.md](scm-credential-handling.md) passed
 - [ ] Authenticated access path confirmed (or explicit user-approved exception)
 
-## Step 5: Run the report
+### Step 5: Run the report
 
 Prefer zip output. Run the report using config file, end date, and output location identified in previous steps:
 
@@ -99,10 +91,10 @@ fcli license ncd-report create -y -c NcdReportConfig.yml -z ncd-report-2026Q1.zi
 Use `-d <dir>` instead of `-z <file>.zip` only if the user explicitly wants directory
 output.
 
-### Step 5 gate
+#### Step 5 gate
 - [ ] Report generation completed without errors
 
-## Step 6: Validate the output
+### Step 6: Validate the output
 
 Confirm the report contains the expected files: `summary.txt`, `contributors.csv`, `checksums.sha256`, and `details/*.csv`.
 
@@ -121,13 +113,13 @@ Review and validate:
 If validation exposes problems, fix the config using the **Prepare config** task, then
 re-run this workflow.
 
-### Step 6 gate
+#### Step 6 gate
 - [ ] Report generated successfully
 - [ ] Expected files present
 - [ ] Summary reviewed for obvious scope/count problems (including dormant counts)
 - [ ] Discovered repositories validated against the known list
 
-## Completion
+### Completion
 
 Work is complete when:
 - repo inclusion logic is reproducible and credentials are externalized;

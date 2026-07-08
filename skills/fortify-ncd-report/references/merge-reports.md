@@ -13,15 +13,11 @@ automatically correct.
 
 - Apply non-negotiable rules from [../SKILL.md](../SKILL.md)
 
-## Overall process
+## Mandatory Workflow
 
-Use this high-level flow when explaining Merge:
+Complete each step before proceeding. Do not skip steps.
 
-1. Collect source reports and verify domain, end-date alignment, and completeness.
-2. Merge the source reports into one domain result.
-3. Review merged summary counts and deduplication outcome.
-
-## Step 1: Collect source reports and verify requirements
+### Step 1: Collect source reports and verify requirements
 
 **Identify all source reports.** Ask for the exact paths, or discover them:
 
@@ -41,13 +37,13 @@ If dates differ, warn that merged totals may mix reporting windows, and ask whet
 **Verify completeness.** Confirm all expected source reports were received. If some are
 missing, note explicitly that merged totals are partial.
 
-### Step 1 gate
+#### Step 1 gate
 - [ ] All source report paths identified
 - [ ] All reports belong to the same reporting domain
 - [ ] All reports use the same end date, or the mismatch is explicitly acknowledged
 - [ ] Missing reports (if any) explicitly noted
 
-## Step 2: Run the merge
+### Step 2: Run the merge
 
 Prefer zip output:
 
@@ -57,7 +53,7 @@ fcli license ncd-report merge -r team-a-report.zip,team-b-report.zip,team-c-repo
 
 Use `-d full-report` for directory output only if the user explicitly wants it.
 
-## Step 3: Review the merged result
+### Step 3: Review the merged result
 
 - Prefer `fcli license ncd-report get-summary -r full-report.zip` and verify total author,
   commit, and repository counts, including dormant counts.
@@ -65,12 +61,12 @@ Use `-d full-report` for directory output only if the user explicitly wants it.
   duplicate team members. Compare against the known domain size if possible, and use
   `fcli license ncd-report list-contributors -r full-report.zip -o csv` for spot checks.
 
-### Step 3 gate
+#### Step 3 gate
 - [ ] Merge succeeded
 - [ ] Merged summary reviewed (including dormant counts)
 - [ ] Cross-report deduplication looks correct
 
-## Completion
+### Completion
 
 Work is complete when:
 - the goal for the reporting domain is met;

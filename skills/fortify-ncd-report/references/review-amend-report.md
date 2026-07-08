@@ -9,20 +9,11 @@ accounts, override status). For the NCD count rules and field definitions, see
 
 - Apply non-negotiable rules from [../SKILL.md](../SKILL.md)
 
-## Overall process
+## Mandatory Workflow
 
-Use this high-level flow when explaining Review & amend:
+Complete each step before proceeding. Do not skip steps.
 
-1. Identify report input(s): single merged report, multiple source reports, or wildcard pattern.
-2. Confirm whether the goal is list, explain, or amend.
-3. For explain/amend goals, run shared analysis to identify duplicates,
-    ignored-account candidates, and dormant contributors, including a mandatory
-    full-list LLM heuristic pass over contributor identities.
-4. Present findings and confirm next action.
-5. If amending, export contributors, produce minimal updates, apply changes, and
-    spot-check.
-
-## Step 1: Select report input and route if needed
+### Step 1: Select report input and route if needed
 
 Ask the user to provide report input first. Do not begin broad filesystem hunts before asking.
 
@@ -39,12 +30,12 @@ Optional quick assist (one-time only):
 Routing rule:
 - If user provides or confirms multiple reports (explicit list or wildcard expansion), execute merge workflow first, then resume this workflow with the merged report.
 
-### Step 1 gate
+#### Step 1 gate
 - [ ] Report input provided or explicitly requested from user
 - [ ] Any auto-discovery was limited to one quick pass and user-confirmed
 - [ ] If multiple reports/wildcard were provided, merge workflow was executed first
 
-## Step 2: Determine the review goal
+### Step 2: Determine the review goal
 
 If source reports still need merging in a federated model, merge first and perform
 `list-contributors` / `update-contributor-status` once on the merged report. This
@@ -61,10 +52,10 @@ Confirm what the user wants:
 
 Validation rule: treat contributor-validation requests as amend workflow requests. Always execute shared analysis in Step 4 first, then execute Step 6a and Step 6d; execute Step 6c only if proposed changes are found.
 
-### Step 2 gate
+#### Step 2 gate
 - [ ] Review goal confirmed (list, explain, or amend)
 
-## Step 3: List contributors
+### Step 3: List contributors
 
 Export the contributor list in the format that suits the user (`json` for AI/programmatic
 review, `csv` for spreadsheets, `yaml` for manual reading):
@@ -77,10 +68,10 @@ The export contains every contributor with fields including `authorId`,
 `lastCommitDate`, `status` (`ACTIVE`/`IGNORED`), `duplicateOf`, and `overrideStatus`.
 See [concepts.md](concepts.md) for the editable fields. **Never modify `authorId`.**
 
-### Step 3 gate
+#### Step 3 gate
 - [ ] Output format chosen and exported
 
-## Step 4: Analyze report contributors (shared for Explain and Amend)
+### Step 4: Analyze report contributors (shared for Explain and Amend)
 
 Use this step for both **Explain** and **Amend** goals.
 
@@ -150,12 +141,12 @@ A higher-than-expected count can be caused by any of the following:
 5. Persist analysis artifacts:
     - Save candidate sets A/B/C and counts so they can be reused in Step 5 (Explain output) and Step 6 (Amend actions) without recomputing.
 
-### Step 4 gate
+#### Step 4 gate
 - [ ] Preflight validation completed (assets present, parse validated)
 - [ ] Mandatory zero-result safeguard executed where applicable
 - [ ] Candidate sets A/B/C produced with evidence and counts
 
-## Step 5: Present analysis and choose next action
+### Step 5: Present analysis and choose next action
 
 1. If goal is **Explain**, produce output with three separate sections:
     - Potential duplicates: list users, with brief evidence.
@@ -167,7 +158,7 @@ A higher-than-expected count can be caused by any of the following:
     - For potential duplicates and potential ignored users, recommend applying updates through Step 6 (Step 6a to export, Step 6b to prepare minimal updates, Step 6c to apply, Step 6d to spot-check).
     - For dormant contributors, explicitly state they still count toward NCD license definition by default.
     - Ask whether dormant repositories were ever scanned by Fortify and whether associated FoD/SSC applications still exist.
-    - Only if repositories were never scanned and/or associated applications were deleted, recommend tightening `repositoryIncludeExpression` for future runs (see [discovery-and-config.md](discovery-and-config.md)).
+    - Only if repositories were never scanned and/or associated applications were deleted, recommend tightening `repositoryIncludeExpression` for future runs (see [concepts.md](concepts.md)).
     - Only if that evidence is available and immediate correction is needed in the current report, recommend applying `IGNORED` overrides through Step 6.
 
 3. Decision rule (mandatory):
@@ -176,20 +167,20 @@ A higher-than-expected count can be caused by any of the following:
     - If user goal is **Amend**, do not ask a second time whether to run duplicate/bot analysis or whether to include both categories. Proceed directly to Step 6 using Step 4 findings, unless the user explicitly narrowed scope.
     - If duplicates are present only at medium confidence, present them as manual-review candidates in the same first-pass report instead of silently omitting them.
 
-### Step 5 gate
+#### Step 5 gate
 - [ ] Analysis output shared (full explain output for Explain goal, concise scope summary for Amend goal)
 - [ ] If A/B/C has candidates, user was explicitly offered Step 6 amend action
 - [ ] Next action confirmed (amend now, stricter analysis, or stop)
 
-## Step 6: Amend contributor status
+### Step 6: Amend contributor status
 
-### Step 6a: Export for amendment
+#### Step 6a: Export for amendment
 
 ```bash
 fcli license ncd-report list-contributors -r ncd-report.zip -o json --to-file contributors.json
 ```
 
-### Step 6b: Produce a minimal update file
+#### Step 6b: Produce a minimal update file
 
 Edit by hand or with AI assistance. **Emit only the rows that should change** — not the
 full export. For each changed row set the editable fields (`duplicateOf`, `overrideStatus`, `overrideStatusConfidence`, `overrideStatusNotes`) and keep `authorId` exactly as exported. `overrideStatus` must be one of `contributing`, `duplicate`, or `ignored`; `duplicateOf` must point to another existing `authorId`.
@@ -207,7 +198,7 @@ For AI-assisted review, use [../assets/lsc-to-ucs-review-template.md](../assets/
 (strict prompt + output schema). For a concrete walkthrough, see
 [../assets/lsc-to-ucs-worked-example.md](../assets/lsc-to-ucs-worked-example.md).
 
-### Step 6b-confirm: Review and confirm amendments
+#### Step 6b-confirm: Review and confirm amendments
 
 Before applying, display the amendments planned:
 
@@ -235,11 +226,11 @@ Before applying, display the amendments planned:
 
 Do not proceed to Step 6c until the user confirms "Yes, apply these amendments".
 
-### Step 6b-confirm gate
+#### Step 6b-confirm gate
 - [ ] Amendment count and breakdown displayed
 - [ ] User explicitly confirmed amendments before proceeding to Step 6c
 
-### Step 6c: Apply the amendments
+#### Step 6c: Apply the amendments
 
 ```bash
 fcli license ncd-report update-contributor-status -r ncd-report.zip -c contributors-reviewed.json
@@ -255,7 +246,7 @@ fcli license ncd-report update-contributor-status -r ncd-report.zip -c contribut
 The command validates report checksums before applying, so amend the report in place
 rather than hand-editing files inside it.
 
-### Step 6d: Spot-check
+#### Step 6d: Spot-check
 
 Re-export and confirm the intended rows changed and no broad misclassification was
 introduced:
@@ -264,17 +255,14 @@ introduced:
 fcli license ncd-report list-contributors -r ncd-report.zip -o json --to-file contributors-after.json
 ```
 
-### Step 6 gate
+#### Step 6 gate
 - [ ] Contributors exported for review
 - [ ] Only changed rows emitted, `authorId` preserved exactly
 - [ ] Amendment count reviewed and user confirmed before applying
 - [ ] Amendments applied
 - [ ] Spot-check confirms the intended changes
 
-## Completion
+### Completion
 
 Work is complete when the necessary corrections are applied, the spot-check confirms
-the changes are as intended, and no broad misclassification was introduced. If this was
-a merged report and you are the consolidator, your work is done; otherwise return to
-[generate-report.md](generate-report.md) or [merge-reports.md](merge-reports.md) if a
-regenerate/re-merge is needed.
+the changes are as intended, and no broad misclassification was introduced. If this was a merged report and you are the consolidator, your work is done; otherwise return to [generate-report.md](generate-report.md) or [merge-reports.md](merge-reports.md) if a regenerate/re-merge is needed.
