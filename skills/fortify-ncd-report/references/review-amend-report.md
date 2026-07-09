@@ -9,13 +9,28 @@ accounts, override status). For the NCD count rules and field definitions, see
 
 - Apply non-negotiable rules from [../SKILL.md](../SKILL.md)
 
+## Command reference
+
+Core commands used in this workflow:
+
+- `fcli license ncd-report get-summary -r <report path>`
+- `fcli license ncd-report list-repositories -r <report path> ...`
+- `fcli license ncd-report list-contributors -r <report path> ...`
+- `fcli license ncd-report update-contributor-status -r <report path> -c <updates file>`
+
+Alias equivalents (same behavior):
+
+- `list-repositories` = `lsr`
+- `list-contributors` = `lsc`
+- `update-contributor-status` = `ucs`
+
 ## Mandatory Workflow
 
 Complete each step before proceeding. Do not skip steps.
 
 ### Step 1: Select report input and route if needed
 
-Ask the user to provide report input first. Do not begin broad filesystem hunts before asking.
+Ask the user to provide report input first unless already provided. Do not begin broad filesystem hunts before asking.
 
 Accepted input forms:
 - Single report path (zip or directory report bundle): continue in this workflow.
@@ -35,227 +50,228 @@ Routing rule:
 - [ ] Any auto-discovery was limited to one quick pass and user-confirmed
 - [ ] If multiple reports/wildcard were provided, merge workflow was executed first
 
-### Step 2: Determine the review goal
+### Step 2: Display report summary
 
-If source reports still need merging in a federated model, merge first and perform
-`list-contributors` / `update-contributor-status` once on the merged report. This
-catches cross-team duplicates and avoids repeated review effort.
-
-Confirm what the user wants:
-
-| User says | Goal | Go to |
-|-----------|------|-------|
-| "show / export the contributors" | **List** | Step 3 |
-| "explain count", "explain unexpected count", "why does it show X contributors?", "the count seems high" | **Explain** | Step 4 |
-| "mark these as duplicates", "these should be ignored", "fix this" | **Amend** | Step 4 |
-| "validate contributors", "validate contributing authors", "check if contributors should be duplicate/ignored" | **Amend** | Step 4 |
-
-Validation rule: treat contributor-validation requests as amend workflow requests. Always execute shared analysis in Step 4 first, then execute Step 6a and Step 6d; execute Step 6c only if proposed changes are found.
+Run `fcli license ncd-report get-summary -r <(merged) report file or directory>`, and show the output to user. Do not remove any data, just add proper formatting if needed to make output more visually appealing.
 
 #### Step 2 gate
-- [ ] Review goal confirmed (list, explain, or amend)
+- [ ] Full report summary shown to user
 
-### Step 3: List contributors
+### Step 3: Task selection
 
-Export the contributor list in the format that suits the user (`json` for AI/programmatic
-review, `csv` for spreadsheets, `yaml` for manual reading):
+Offer user the following choices in Q/A style dialog:
+- List & update repositories => Continue to step 4
+- List & update contributors => Continue to step 5
+- Something else => Identify what the user wants to do, and use any information listed in this workflow file as background info to assist the user in performing that task
+
+### Step 4: List & update repositories
+
+Use this step to review repository scope in the current report and optionally
+prepare repository-driven contributor updates.
+
+Large output rule (mandatory):
+- For commands expected to produce large output, use `--to-file` and work from files rather than rendering full JSON inline.
+- If your assistant supports memory files, persist compact artifacts there. Otherwise persist compact artifacts to local files next to the report.
+
+#### Step 4a: Export and present included repositories
+
+Run:
 
 ```bash
-fcli license ncd-report list-contributors -r ncd-report.zip -o json --to-file contributors.json
+fcli license ncd-report list-repositories \
+    -r <report path> \
+    -q 'status=="included"' \
+    --embed=contributors \
+    -o json \
+    --to-file repositories-included.json
 ```
 
-The export contains every contributor with fields including `authorId`,
-`lastCommitDate`, `status` (`ACTIVE`/`IGNORED`), `duplicateOf`, and `overrideStatus`.
-See [concepts.md](concepts.md) for the editable fields. **Never modify `authorId`.**
+Use `repositories-included.json` to present three formatted lists (omit empty
+lists):
+- Dormant repositories (`dormant == 'true'`)
+- Non-dormant repositories (`dormant == 'false'`)
+- Unknown-dormancy repositories (`dormant == 'unknown'`)
 
-#### Step 3 gate
-- [ ] Output format chosen and exported
+For each repository entry, include:
+- `repositoryUrl` (primary identifier)
+- `fork`, `dormant`, `status`, `sourceReport` (if present)
+- raw counts: `contributorCountRaw`, `commitCountRaw` (if available)
+- up to 3 contributor emails from embedded `contributors`, plus a continuation marker if there are more
 
-### Step 4: Analyze report contributors (shared for Explain and Amend)
+If any dormant repositories exist, explain immediately after that list:
+- Dormant repositories are relevant for NCD reporting per criterion 2 in [concepts.md](concepts.md).
+- Dormant repositories do not map 1:1 to NCD count.
 
-Use this step for both **Explain** and **Amend** goals.
+Then ask user to choose:
+- AI-assisted repository scope cleanup => continue to Step 4b
+- Continue with another task => return to Step 3
 
-A higher-than-expected count can be caused by any of the following:
-- Criterion 2 of the NCD definition (see [concepts.md](concepts.md)): contributors can still count if they contributed to repositories that were ever scanned by Fortify, even if those repositories are now dormant.
-- Duplicate authors were not detected as duplicates by current deduplication settings.
-- Bot/service/non-human accounts were not marked `IGNORED`.
-- Repositories are in scope that should not be in the reporting domain.
+##### Step 4a gate
+- [ ] Included repositories exported to file
+- [ ] Three dormancy lists presented (omitting empties)
+- [ ] Dormant-repository impact explained when applicable
 
-1. Run analysis preflight validation before generating any conclusions:
-     - Verify command-level report readability by running:
-         - `fcli license ncd-report get-summary -r ncd-report.zip`
-         - `fcli license ncd-report list-contributors -r ncd-report.zip -o csv`
-         - `fcli license ncd-report list-repositories -r ncd-report.zip -o csv`
-     - If manual CSV parsing is needed, validate parsing correctness with at least one independent check (for example, compare parsed contributor row counts against `fcli ... list-contributors -o csv`, and verify sampled identities can be found verbatim in source files).
-     - If validation fails, stop and report **inconclusive** analysis results rather than reporting zero candidates.
+#### Step 4b: Identify repositories likely out of reporting scope
 
-2. Export contributors and build candidate lists for:
-    - (A) potential duplicates
-    - (B) potential users that should be ignored
+Analyze `repositories-included.json` for likely out-of-scope repositories, such as:
+- forks that should not count (`fork == 'true'`)
+- test/sandbox/demo/sample/docs repositories
+- third-party or mirror repositories
+- archived/deprecated repositories that are no longer in Fortify reporting domain (but note that those repositories still count if ever scanned by Fortify)
 
-    Mandatory LLM identity pass (automatic, no extra user prompt):
-    - Export contributing users (only) to JSON for dedupe/ignore analysis:
-      ```bash
-      fcli license ncd-report list-contributors -r ncd-report.zip -q "contributionStatus=='contributing'" -o json --to-file contributors-contributing.json
-      ```
-    - Pass the full contributing-identity set from `contributors-contributing.json` (at minimum `authorId`, `authorName`, `authorEmail`, and contribution status fields if present) to the LLM.
-    - Ask the LLM to produce heuristic candidate groups for:
-        - potential duplicate contributors
-        - potential bot/service/admin/non-human contributors to ignore
-    - Require confidence and short evidence per candidate/group.
-    - Run this LLM pass automatically for Explain and Amend goals; do not wait for an extra user request.
+Present recommendations as confidence-tiered groups (`high`, `medium`, `low`) with:
+- repository URL
+- short evidence
+- suggested config adjustment (`includeForks`, `repositoryIncludeExpression`, or source-level selector narrowing)
 
-    Convergence rule (mandatory):
-    - Produce one comprehensive first-pass result that includes all duplicate and ignore candidates split by confidence tiers (high/medium/low), with counts and evidence.
-    - Do not run repeated "harder" duplicate sweeps by default after this first pass.
-    - Run an additional stricter pass only if:
-        - zero-result safeguard requires it, or
-        - the user explicitly asks for a stricter/deeper pass.
-    - If a stricter pass is run, report only delta findings versus first pass (new/removed/re-scored candidates), not a full re-narration.
+Present the above in multiple-choice lists, allowing user to click the repositories to be excluded. If not supported by assistant, present repositories in numbered list and ask user to enter repository numbers to be excluded.
 
-    Minimum heuristic coverage:
-    - (A) include exact/normalized-email checks and near-name checks with supporting evidence.
-    - (B) include bot/service/admin/technical-account patterns with supporting evidence.
-    - Combine LLM findings with deterministic checks; if they disagree materially, mark affected category as inconclusive and explain.
+If no repositories were selected, return to step 3, otherwise continue below.
 
-    Re-use the same review approach and assets as Step 6b:
-    - [../assets/lsc-to-ucs-review-template.md](../assets/lsc-to-ucs-review-template.md)
-    - [../assets/lsc-to-ucs-worked-example.md](../assets/lsc-to-ucs-worked-example.md)
+Before proposing config changes, load effective config from the report (mandatory):
+- Unmerged report input:
+    - Locate and read top-level `report-config.yaml` from the report directory/zip.
+- Merged report input:
+    - For each selected repository, identify `sourceReport` from Step 4a output.
+    - Locate and read `sources/<sourceReport>/report-config.yaml` for each impacted source report.
+- If any required config file cannot be found or read, stop config-edit recommendations and report outcome as **inconclusive** for that source; continue with any sources for which config is available.
 
-3. Analyze dormant status:
-     - Query dormant repositories directly from report output:
-         - `fcli license ncd-report list-repositories -r ncd-report.zip -q "dormant=='true'" -o json`
-     - Query dormant contributors directly from report output:
-         - `fcli license ncd-report list-contributors -r ncd-report.zip -q "dormant=='true'" -o json`
-     - Treat dormant values as follows:
-         - `true`: contributor or repository is classified dormant by report logic.
-         - `false`: at least one non-dormant contribution/repository is in scope.
-         - `unknown`: insufficient data in report (common on older/legacy reports).
-     - Explain that dormant contributors still count toward NCD by default per Criterion 2 (see [concepts.md](concepts.md)); do not recommend ignoring them unless there is evidence that the related repositories were never scanned by Fortify and/or associated FoD/SSC applications were deleted.
+Then propose config changes using explicit mapping rules:
+- Fork-only exclusions:
+    - If selected repositories are predominantly forks and user intent is to exclude forks generally, propose `includeForks: false` for impacted source(s).
+- Pattern-based exclusions (for example names containing `test`, `demo`, `sample`, `docs`, `sandbox`):
+    - Propose tightening `repositoryIncludeExpression` to exclude those patterns.
+    - Prefer broad but intentional patterns over long per-repository lists.
+- Specific repository exclusions (explicit selected repository URLs/names):
+    - Propose explicit negative-match clauses in `repositoryIncludeExpression` for the selected repositories.
+    - Keep expressions readable; group by common prefix where possible.
+- Mixed selections:
+    - Combine `includeForks` and `repositoryIncludeExpression` changes as needed.
 
-4. Run a mandatory zero-result safeguard:
-    - If any of (A), (B), or (C) returns zero, run an independent second-pass check before finalizing (for example, alternate parsing method or stricter/broader heuristic set).
-    - If first-pass and second-pass disagree, report the category as **inconclusive** and include the discrepancy.
-    - Only report a final zero when both passes agree and parser validation succeeded.
+Output requirements for proposed config edits:
+- Show current relevant config snippet(s) first (from loaded `report-config.yaml` files).
+- Show proposed snippet(s) and a short rationale per change.
+- Distinguish recommendations by source report for merged inputs.
 
-5. Persist analysis artifacts:
-    - Save candidate sets A/B/C and counts so they can be reused in Step 5 (Explain output) and Step 6 (Amend actions) without recomputing.
+Application routing:
+- Unmerged report: offer to run [prepare-config.md](prepare-config.md) to apply edits to user-owned config.
+- Merged report: explain that changes must be applied in each source team's config at origin, and provide per-source change instructions.
 
-#### Step 4 gate
-- [ ] Preflight validation completed (assets present, parse validated)
-- [ ] Mandatory zero-result safeguard executed where applicable
-- [ ] Candidate sets A/B/C produced with evidence and counts
+Once completed, ask user whether they want to update the current report to ignore contributors that only contributed to the selected repositories to be excluded:
+- If yes, continue to step 4c
+- If no, return to step 3.
 
-### Step 5: Present analysis and choose next action
+##### Step 4b gate
+- [ ] Out-of-scope candidate repositories identified with confidence and evidence
+- [ ] User selection of repositories to exclude confirmed
+- [ ] Effective `report-config.yaml` loaded for each impacted source (or explicitly marked inconclusive)
+- [ ] Config update recommendations provided from loaded config (and routed to prepare-config if requested)
 
-1. If goal is **Explain**, produce output with three separate sections:
-    - Potential duplicates: list users, with brief evidence.
-    - Potential to be ignored: list users, with brief evidence.
-    - Dormant contributors: list users, related dormant repositories (if available), and whether they still count by default.
-    - Include per-section counts and a short note on how the count was derived.
+#### Step 4c: Apply repository-driven ignore candidates
 
-2. Include cleanup suggestions:
-    - For potential duplicates and potential ignored users, recommend applying updates through Step 6 (Step 6a to export, Step 6b to prepare minimal updates, Step 6c to apply, Step 6d to spot-check).
-    - For dormant contributors, explicitly state they still count toward NCD license definition by default.
-    - Ask whether dormant repositories were ever scanned by Fortify and whether associated FoD/SSC applications still exist.
-    - Only if repositories were never scanned and/or associated applications were deleted, recommend tightening `repositoryIncludeExpression` for future runs (see [concepts.md](concepts.md)).
-    - Only if that evidence is available and immediate correction is needed in the current report, recommend applying `IGNORED` overrides through Step 6.
+Apply if explicitly confirmed in step 4b.
 
-3. Decision rule (mandatory):
-    - If analysis finds any non-empty candidate set (A, B, or C), explicitly ask whether to proceed to Step 6 to amend now.
-    - If analysis is fully empty and validated, ask whether to stop or run a stricter custom heuristic pass.
-    - If user goal is **Amend**, do not ask a second time whether to run duplicate/bot analysis or whether to include both categories. Proceed directly to Step 6 using Step 4 findings, unless the user explicitly narrowed scope.
-    - If duplicates are present only at medium confidence, present them as manual-review candidates in the same first-pass report instead of silently omitting them.
+Prepare a minimal `contributors-reviewed.json` update file, with each array entry containing `authorId`, `overrideStatus='ignored'`, `overrideStatusConfidence`, `overrideStatusNotes`, using one of the following inputs:
+- `fcli license ncd-report list-contributors -r <report path> --embed=repositories -o json -q 'contributionStatus=="contributing" && repositories.size()>0 && repositories.?[!({"<excludedRepoUrl1>","<excludedRepoUrl2>",...}.contains(repositoryUrl))].size()==0'` (use `--to-file` option if needed)
+- Manual filtering of contributors that **only** appear on repositories to be excluded from the `repositories-included.json` file generated in step 4a. Do not include contributors that also appear on repositories that have not been marked for exclusion.
+
+Then apply updates:
+
+```bash
+fcli license ncd-report update-contributor-status \
+    -r <report path> \
+    -c contributors-reviewed.json
+```
+
+Spot-check immediately after apply:
+
+```bash
+fcli license ncd-report list-contributors \
+    -r <report path> \
+    -o json \
+    --to-file contributors-after-step4c.json
+```
+
+Inform user about progress, then return to Step 3.
+
+##### Step 4c gate
+- [ ] Selected repository URL set persisted from Step 4b
+- [ ] Contributors to be ignored identified
+- [ ] Mixed contributors (excluded + non-excluded repos) skipped from updates
+- [ ] Minimal `contributors-reviewed.json` prepared
+- [ ] Updates applied without additional confirmation
+- [ ] Spot-check completed and summarized
+
+### Step 5: List & update contributors
+
+Use this step for contributor-focused analysis, including AI-assisted duplicate
+and ignore candidate discovery.
+
+Large output rule (mandatory):
+- Use `--to-file` for contributor exports.
+- If your assistant supports memory files, persist compact artifacts there. Otherwise persist compact artifacts to local files next to the report.
+
+#### Step 5a: Export and present contributing contributors
+
+Run:
+
+```bash
+fcli license ncd-report list-contributors \
+    -r <report path> \
+    -q 'contributionStatus=="contributing"' \
+    --embed=repositories \
+    -o json \
+    --to-file contributors.json
+```
+
+Use the output to present three lists (omit empty lists):
+- Dormant contributors (`dormant == 'true'`)
+- Non-dormant contributors (`dormant == 'false'`)
+- Unknown-dormancy contributors (`dormant == 'unknown'`)
+
+For each contributor, include:
+- `authorId`, `authorName`, `authorEmail`
+- `sourceReport` from embedded repositories if present
+- up to 3 associated `repositoryUrl` values with continuation marker if more
+
+If dormant contributors are present, explain they still count toward NCD by default per criterion 2 in [concepts.md](concepts.md).
+
+Then ask user to choose:
+- AI-assisted contributor cleanup => continue to Step 5b
+- Continue with another task => return to Step 3
+
+#### Step 5b: Run AI-assisted identity analysis
+
+Run a mandatory, detailed duplicate/ignore analysis on `contributors.json` as generated in step 5a to produce the following:
+1. Potential ignored users (bot/service/admin/non-human accounts)
+2. Potential duplicates (name variants, misspellings, abbreviations, email-local-part overlaps)
+For both, confidence and notes (explaining why this is considered ignored/duplicate user) **must** be collected.
+
+Output findings from the above. If no suggested updates, return to step 3. If suggested updates available, ask user in Q/A dialog with clear, user-friendly wording:
+- Apply all
+- Apply all except for the ones I select
+- Apply only the ones I select
+
+Based on selection, proceed directly to step 5c (apply all), or present a multiple-choice list to allow user to select which updates to (not) apply before proceeding to step 5c.
+
+##### Step 5b gate
+- [ ] User confirmed which auto-detected ignore/deduplication updates to apply, if there are any
+
+#### Step 5c: Update report
+
+Based on the selection made in step 5b, create a minimal `contributors-reviewed.json` update file, with each array entry containing `authorId`, `overrideStatus`, `overrideStatusConfidence`, `overrideStatusNotes`, and `duplicateOf` (must point to existing author id) if applicable, then run:
+
+```bash
+fcli license ncd-report update-contributor-status -r <report path> -c contributors-reviewed.json
+```
+
+Then, re-export and confirm the intended rows changed and no broad misclassification was introduced:
+
+```bash
+fcli license ncd-report list-contributors -r <report path> -o json --to-file contributors-after.json
+```
 
 #### Step 5 gate
-- [ ] Analysis output shared (full explain output for Explain goal, concise scope summary for Amend goal)
-- [ ] If A/B/C has candidates, user was explicitly offered Step 6 amend action
-- [ ] Next action confirmed (amend now, stricter analysis, or stop)
-
-### Step 6: Amend contributor status
-
-#### Step 6a: Export for amendment
-
-```bash
-fcli license ncd-report list-contributors -r ncd-report.zip -o json --to-file contributors.json
-```
-
-#### Step 6b: Produce a minimal update file
-
-Edit by hand or with AI assistance. **Emit only the rows that should change** — not the
-full export. For each changed row set the editable fields (`duplicateOf`, `overrideStatus`, `overrideStatusConfidence`, `overrideStatusNotes`) and keep `authorId` exactly as exported. `overrideStatus` must be one of `contributing`, `duplicate`, or `ignored`; `duplicateOf` must point to another existing `authorId`.
-
-Default amendment scope rule:
-- If the user selected Amend and did not explicitly narrow scope, include both duplicate and ignored candidates from Step 4 in the proposed minimal update file.
-
-Confidence handling rule:
-- By default, include only high-confidence candidates in `contributors-reviewed.json` for direct apply, and present medium-confidence candidates as a separate manual-review list.
-- If the user asks for aggressive coverage, allow medium-confidence candidates in the update file but keep confidence/notes explicit.
-
-For dormant-related `ignored` overrides, include evidence in `overrideStatusNotes` that the relevant repositories were never scanned by Fortify and/or associated FoD/SSC applications were deleted.
-
-For AI-assisted review, use [../assets/lsc-to-ucs-review-template.md](../assets/lsc-to-ucs-review-template.md)
-(strict prompt + output schema). For a concrete walkthrough, see
-[../assets/lsc-to-ucs-worked-example.md](../assets/lsc-to-ucs-worked-example.md).
-
-#### Step 6b-confirm: Review and confirm amendments
-
-Before applying, display the amendments planned:
-
-1. Count amendments in the file:
-   ```bash
-   jq '. | length' contributors-reviewed.json
-   ```
-
-2. By amendment type (duplicate, ignored, contributing):
-   ```bash
-   jq 'group_by(.overrideStatus) | map({status: .[0].overrideStatus, count: length})' contributors-reviewed.json
-   ```
-
-3. Display decision logic:
-   - If amendment count ≤ 10: Display all amendments in readable table/list format with contributor names, emails, amendment type, and brief evidence/notes.
-   - If amendment count > 10: Display only the count by type; offer user a choice:
-     - "Review in detail" — export full amendment list for manual inspection before confirming.
-     - "Show preview" — display first N (≈5–10) amendments as sample.
-     - "Apply as-is" — skip detail review and proceed directly to Step 6c.
-
-4. Mandatory user confirmation: Present an interactive choice list:
-   - "Yes, apply these amendments"
-   - "No, let me review the file first" (returns to hand-edit mode)
-   - "Cancel and stop"
-
-Do not proceed to Step 6c until the user confirms "Yes, apply these amendments".
-
-#### Step 6b-confirm gate
-- [ ] Amendment count and breakdown displayed
-- [ ] User explicitly confirmed amendments before proceeding to Step 6c
-
-#### Step 6c: Apply the amendments
-
-```bash
-fcli license ncd-report update-contributor-status -r ncd-report.zip -c contributors-reviewed.json
-```
-
-`--min-confidence` (default `0.8`) applies only rows whose `overrideStatusConfidence`
-meets the threshold — useful for AI-generated updates:
-
-```bash
-fcli license ncd-report update-contributor-status -r ncd-report.zip -c contributors-reviewed.json --min-confidence 0.90
-```
-
-The command validates report checksums before applying, so amend the report in place
-rather than hand-editing files inside it.
-
-#### Step 6d: Spot-check
-
-Re-export and confirm the intended rows changed and no broad misclassification was
-introduced:
-
-```bash
-fcli license ncd-report list-contributors -r ncd-report.zip -o json --to-file contributors-after.json
-```
-
-#### Step 6 gate
 - [ ] Contributors exported for review
 - [ ] Only changed rows emitted, `authorId` preserved exactly
 - [ ] Amendment count reviewed and user confirmed before applying

@@ -19,9 +19,20 @@ run a report from a ready config, use [generate-report.md](generate-report.md).
 
 Complete each step before proceeding. Do not skip steps.
 
-### Step 0: Read auth instructions
+### Step 0: Prepare
+
+Execute both steps 0a and 0b.
+
+#### Step 0a: Read auth instructions
 
 Load [run-cmd-with-scm-auth.md](run-cmd-with-scm-auth.md). Use this workflow whenever this task needs to run `fcli license ncd-report validate-sources` or direct SCM REST calls.
+
+##### Step 0a gate
+- [ ] Auth instructions confirmed and ready to be applied to selected commands
+
+#### Step 0b: Create scaffold config
+
+Run `fcli license ncd-report create-config -y -c <path>/fcli-ncd-report-config-reference.yaml`, where `<path>` denotes either chat memory directory or system temp directory. This file will is to be used as a reference file in later steps, for example allowing to identify supported SCM platforms and supported configuration settings for the current fcli version. Use this file as the source of truth, do not edit it, and clean it up after this workflow completes.
 
 ### Step 1: Create new or update existing config?
 
@@ -40,11 +51,7 @@ If the user chooses **create**:
 - If selected config file location already exists, ask user what to do:
   - Overwrite with new sample config -> continue with next item
   - Use as-is -> skip to step 2
-- Run the following command to generate the sample config:
-  ```bash
-  fcli license ncd-report create-config -y -c <path> -o yaml
-  ```
-  Replace `<path>` with the confirmed path from user response above.
+- Copy the scaffold config created in step 0b to the user-specified location; this newly copied file will be edited in subsequent steps
 - Continue to Step 2
 
 ##### Step 1a gate
@@ -133,8 +140,10 @@ Route based on the choice:
 
 #### Step 3c: Offer discovery techniques reference
 
-Read "Repository Discovery Techniques" section from [concepts.md](concepts.md) if not already read before and apply these concepts to guide user in right direction in subsequent steps. Then, ask the user whether they would like to see or revisit the repository discovery techniques:
-- If yes → display the section referenced above, then continue to Step 3d
+Read [concepts.md](concepts.md) if not already read before and apply these concepts to guide user in right direction in subsequent steps; the "Repository Discovery Techniques" section is directly relevant for subsequent steps, but other concepts may also be relevant for proper repository discovery and selection. 
+
+Then, ask the user whether they would like to see or revisit the repository discovery techniques:
+- If yes → display the "Repository Discovery Techniques" section from [concepts.md](concepts.md), then continue to Step 3d
 - If no → continue to Step 3d
 
 ##### Step 3c gate
@@ -235,8 +244,8 @@ Then ask the user what they want to do next:
 - **Make further modifications** — return to Step 2 or Step 3 as appropriate
 - **Run validation** — if not yet done in Step 3f, run it now to check repository
   scope
-- **Stop here** — config is saved; task is complete
-- **Proceed to generate report** — continue with [generate-report.md](generate-report.md)
+- **Stop here** — config is saved; clean up temp file created in step 0b, after which task is complete
+- **Proceed to generate report** — clean up temp file created in step 0b, then continue with [generate-report.md](generate-report.md)
 
 #### Step 4 gate
 - [ ] Config summary reviewed and confirmed by user
