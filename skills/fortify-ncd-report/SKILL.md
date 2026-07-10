@@ -19,13 +19,20 @@ the `fcli license ncd-report` command family: explain reporting process, author 
 
 - **Stay within the documented workflow.** Do not proactively offer side-quests or capabilities that aren't part of the step you're in. If a step in this skill calls for it, do it; if not, don't surface it as an option. Eager suggestions waste the user's attention and lead them off the remediation path.
 - Always load relevant reference files for the current task, and follow them end to end. Do not skip steps or improvise. Always apply non-negotiable rules and completion gates listed in the reference files.
-- Do not generate any files or directories in arbitrary locations; always ask user for working directory if current task needs to output files/directories, providing choice between current directory, temp directory, or custom location.
+- Do not generate any files or directories in arbitrary locations; always ask user for working directory if current task needs to output files/directories, providing choice between any logical directories derived from chat (like next to source reports when merging), current directory, temp directory, or custom location.
 - Always ask user to confirm auto-discovered or inferred values before proceeding. Never assume the user's intent.
 - Infer any required task inputs from the prompt and environment first, then explicitly confirm before proceeding.
 - When doing manual CSV parsing, always validate that CSV parsing approach is accurate, for example by matching CSV parsing output of `contributors.csv` against `fcli license ncd-report list-contributors -o csv` output, or by comparing CSV parsing output against manual text searches against the same CSV file. Do not assume that CSV parsing is correct without validation.
 - If user input is required and a distinct set of valid options exists, present an interactive choice list (clickable options in question/answer style, not a plain numbered list) and ask the user to select one. If applicable, include a "Custom" option for free-form input and/or a "Something else" option to break out of the list. Fall back to a numbered list only if the runtime does not support interactive choice prompts.
-- When interactive choice prompts are available, do not duplicate the same choice list in normal narrative output.
+- If a workflow step requires discovered candidates, findings, or inventory to be explained before selection, show that information in normal chat output before presenting any interactive choice prompt.
+- When the same candidate set is shown in chat output and later used in a follow-up interactive choice prompt, reuse the same natural unique labels from the underlying data where practical, for example report paths, repository URLs, or author ids. Introduce synthetic numbering only if no clear natural label exists or the runtime cannot present the natural labels clearly.
+- When workflow calls for presenting a choice list for a given inventory, do **not** output the inventory in normal narrative output if interactive choice prompts are available and used to display that same inventory.
 - Keep question dialog content strictly to the question and selectable options; put recommendations, handoff guidance, and explanatory notes in separate normal chat output.
+- Use an artifact-first output strategy for large datasets (for example long repository/contributor lists):
+  - Persist full details to a review artifact file (prefer markdown; memory file if available, otherwise local file in user-approved working directory).
+  - In chat, provide a concise summary and a bounded preview only (for example first 10-25 rows per relevant group), plus the artifact location.
+  - Do not stream full large lists in chat unless the current step explicitly requires direct user selection over those exact items.
+  - For user-selection steps, keep chat concise but ensure the user can unambiguously select items (interactive options preferred; numbered fallback if needed).
 
 ## Tasks
 
@@ -66,7 +73,7 @@ Check whether the task requires `fcli` (see Tasks table above):
 - If no, skip to step 4.
 
 #### Step 3a — Ensure fcli is available
-Check that `fcli` is installed and available in the current environment, and `fcli -V` returns version 3.23.0 or above. If not, use the instructions in [references/fcli-install.md](references/fcli-install.md) to install or upgrade `fcli`.
+Check that `fcli` is installed and available in the current environment, and `fcli -V` returns version 3.23.0 or above, unless user explicitly pointed you to an fcli executable to use. If not, use the instructions in [references/fcli-install.md](references/fcli-install.md) to install or upgrade `fcli`.
 
 Once fcli availability has been confirmed, continue to step 4 using the task identified in Step 1 or Step 2; never re-prompt for task selection.
 

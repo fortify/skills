@@ -34,6 +34,7 @@ to use Fortify effectively.
 - Skills must be assistant-agnostic: work with Claude Code, GitHub Copilot, Cursor, Gemini CLI, etc.
 - Skills teach workflows using FCLI commands — the AI assistant executes them
 - Leverage best practices where appropriate (https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
+- Do not insert line breaks in the middle of sentences or paragraphs — let the renderer wrap text naturally
 
 ### Workflow terminology
 
