@@ -3,14 +3,14 @@ name: fcli-common
 description: Generic reference for the Fortify CLI (fcli). Install, upgrade, authenticate, fcli environment variables, output formats, SpEL query syntax, variable chaining and custom action framework.
 license: MIT
 metadata:
-  version: "1.0.2"
+  version: "1.0.4"
   tested-with:
-    fcli: "3.18"
+    fcli: "3.23"
 ---
 
 fcli (Fortify CLI) is the unified command-line interface for all Fortify products: Fortify on Demand (FoD), Software Security Center (SSC), ScanCentral SAST, and ScanCentral DAST.
 
-Docs: https://fortify.github.io/fcli/latest/ | Source: https://github.com/fortify/fcli | Skill content reflects fcli v3.18.
+Docs: https://fortify.github.io/fcli/latest/ | Source: https://github.com/fortify/fcli | Skill content reflects fcli v3.23.
 
 This skill covers **cross-product fcli functionality**: installation, session management, output formatting, SpEL queries, variable chaining, custom action development, and ScanCentral management operations. For product-specific operations (querying issues, managing scans, auditing vulnerabilities), defer to the `fortify-fod` or `fortify-ssc` skills — they provide deeper coverage of product-specific commands, API fields, and workflows.
 
@@ -41,7 +41,7 @@ fcli util all-commands list   # list every command available in the installed ve
 
 ## Version Compatibility
 
-Skill content reflects fcli v3.18 (see `tested-with` in frontmatter). If a command fails with "unknown subcommand", "unrecognized option", or a 404/405 REST error, check versions first: run `fcli --version` and, for product-specific failures, ask the user for their SSC or FoD version. Older installs may lack a command; newer installs are generally backward compatible — use `fcli util all-commands list` or `--help` to discover available commands. Do not silently retry with guessed syntax.
+Skill content reflects fcli v3.23 (see `tested-with` in frontmatter). If a command fails with "unknown subcommand", "unrecognized option", or a 404/405 REST error, check versions first: run `fcli --version` and, for product-specific failures, ask the user for their SSC or FoD version. Older installs may lack a command; newer installs are generally backward compatible — use `fcli util all-commands list` or `--help` to discover available commands. Do not silently retry with guessed syntax.
 
 ## Installation & Upgrade
 

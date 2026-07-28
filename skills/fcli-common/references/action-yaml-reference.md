@@ -1,8 +1,8 @@
 # Fcli Action YAML Reference
 
-This is the complete reference for fcli action YAML instructions, types, and SpEL expression functions. Based on fcli v3.18.0, schema v2.7.0.
+This is the complete reference for fcli action YAML instructions, types, and SpEL expression functions. Based on fcli v3.23.3, schema v2.9.0.
 
-> **Schema URL:** `https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.7.0.json`
+> **Schema URL:** `https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.9.0.json`
 >
 > **Official documentation:** https://fortify.github.io/fcli/latest/action-development.html
 
@@ -13,7 +13,7 @@ This is the complete reference for fcli action YAML instructions, types, and SpE
 - [Primary YAML Instructions](#primary-yaml-instructions) — `$schema`, `author`, `usage`, `config`, `cli.options`, `steps`, `formatters`, `functions`
 - [Step Instructions](#step-instructions) — `var.set`, `fn.yield`, `sleep`, `rest.call`, `run.fcli`, `out.write`, `check`, `records.for-each`, `with` (sessions/writers/product), `writer.append`, `throw`, `exit`
 - [Control Instructions](#control-instructions) — `if`, `on.fail`, `on.success`
-- [SpEL Functions Reference](#spel-functions-reference) — CI detection, date/time, text, utility, introspection, Fortify-specific, workflow, encryption
+- [SpEL Functions Reference](#spel-functions-reference) — CI detection/integration, git, date/time, text, utility, HTTP, base64, introspection, Fortify-specific, workflow, encryption
 - [Complete Example: SSC Vulnerability Export to CSV](#complete-example-ssc-vulnerability-export-to-csv)
 - [Complete Example: FoD Policy Check](#complete-example-fod-policy-check)
 - [Exploring Built-in Actions](#exploring-built-in-actions)
@@ -28,11 +28,11 @@ These are the top-level keys in an action YAML file.
 **Required** (unless declared via YAML comment). Defines the schema version.
 
 ```yaml
-$schema: https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.7.0.json
+$schema: https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.9.0.json
 ```
 Or as a YAML comment (preferred for VS Code + Red Hat YAML plugin):
 ```yaml
-# yaml-language-server: $schema=https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.7.0.json
+# yaml-language-server: $schema=https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.9.0.json
 ```
 
 ### `author`
@@ -466,25 +466,42 @@ Steps to execute on success.
 
 ## SpEL Functions Reference
 
+> **Note:** The `#git.localRepo()`, HTTP auth (`#basicAuth`, `#bearerAuth`), and Base64 (`#base64Encode`/`#base64Decode`) functions, as well as the expanded `#ado.*`, `#bitbucket.*`, `#github.*`, and `#gitlab.*` CI functions below, were added in fcli v3.22.0. Verify availability against the installed fcli version before relying on them (`fcli --version`).
+
 ### CI Detection
 | Function | Returns |
 |----------|---------|
-| `#_ci.detect()` | CI-specific object with `type` and `env` properties |
-| `#github.env` | GitHub Actions environment data |
-| `#gitlab.env` | GitLab CI environment data |
-| `#ado.env` | Azure DevOps environment data |
-| `#bitbucket.env` | Bitbucket Pipelines environment data |
+| `#_ci.detect()` | Auto-detects current CI system; returns object with `type` (`github`/`gitlab`/`ado`/`bitbucket`/`unknown`) and `env` properties. If a known type is detected, the corresponding `#github.*`/`#gitlab.*`/`#ado.*`/`#bitbucket.*` functions become usable on the returned object. |
 
 ### CI Integration
+Repository/project-scoped clients auto-detect org/project/repo/PR/MR/commit context from the current pipeline run. Most of these are `(PREVIEW)` — signatures may change.
+
 | Function | Description |
 |----------|-------------|
-| `#github.repo().uploadSarif(sarif)` | Upload SARIF to GitHub Code Scanning |
-| `#github.repo().createCheckRun(body)` | Create GitHub check run with annotations |
-| `#github.repo().addPrComment(body)` | Add PR comment |
-| `#gitlab.project().uploadSecurityReport(type, content)` | Upload to GitLab security dashboard |
+| `#github.repo()` | GitHub repository client |
+| `#github.repo().addPrComment(body)` | (PREVIEW) Add a comment to the current PR |
+| `#github.repo().addReviewComment(path, line, body)` | (PREVIEW) Add a review comment on a specific file/line in the current PR |
+| `#github.repo().createCheckRun(body)` | Create GitHub check run with annotations (auto-paginates >50 annotations) |
+| `#github.repo().createPullRequest(title, head, base, body)` | Create a pull request |
+| `#github.repo().uploadSarif(sarif)` | Upload SARIF to GitHub Code Scanning (requires GHAS; throws `GhasUnavailableException` if not enabled — use `on.fail` for fallback) |
+| `#gitlab.project()` | GitLab project client |
+| `#gitlab.project().addMrComment(body)` | (PREVIEW) Add a comment to the current merge request |
+| `#gitlab.project().createMergeRequest(title, sourceBranch, targetBranch, description)` | Create a merge request |
 | `#gitlab.project().uploadCodeQualityReport(content)` | Upload GitLab code quality report |
-| `#ado.repo().uploadSarif(sarif)` | Upload SARIF to ADO Advanced Security |
-| `#bitbucket.repo().uploadReport(id, content)` | Upload Bitbucket Code Insights report |
+| `#gitlab.project().uploadSecurityReport(type, content)` | Upload security report (requires Ultimate/Premium) — type: `sast`, `dast`, `dependency_scanning`, `container_scanning`, etc. |
+| `#ado.project()` | Azure DevOps project client |
+| `#ado.project().addPrThread(comment)` | (PREVIEW) Add a comment thread to the current PR |
+| `#ado.project().publishTestResults(testRunner, testResults)` | (PREVIEW) Publish test results (free tier) |
+| `#ado.repo()` | Azure DevOps repository client |
+| `#ado.repo().uploadSarif(sarif)` | (PREVIEW) Upload SARIF to ADO Advanced Security (paid tier) |
+| `#bitbucket.repo()` | Bitbucket repository client |
+| `#bitbucket.repo().uploadReport(reportId, content)` | Create/update a Bitbucket Code Insights report for the current commit |
+| `#bitbucket.repo().addReportAnnotations(reportId, content)` | Append annotations to an existing Code Insights report |
+
+### Git
+| Function | Description |
+|----------|-------------|
+| `#git.localRepo(sourceDir)` | Returns git repository info (branch, commit, remote URL, etc.) for the git working tree containing `sourceDir`, or `null` if not a git working tree. `#localRepo(sourceDir)` is a deprecated alias that delegates to this function — prefer `#git.localRepo`. |
 
 ### Date/Time
 | Function | Description |
@@ -513,21 +530,22 @@ Steps to execute on success.
 | `#substringBefore(input, separator)` | Substring before separator |
 | `#regexQuote(input)` | Escape regex special characters |
 | `#repeat(input, count)` | Repeat text N times |
+| `#replaceAllFromRegExMap(input, replacements)` | Apply all regex-pattern → replacement pairs from a map to the input string |
 ### Introspection
 Query the installed fcli's command structure at runtime. Useful for defensive actions that need to check whether a command or flag exists before using it, or to enumerate available commands dynamically.
 
 | Function | Description |
 |----------|-----------|
-| `#fcli.listCommands()` | List all commands available in the installed fcli |
-| `#fcli.listCommands(query)` | List commands matching a SpEL query expression |
-| `#fcli.getCommandSpec(command)` | Get full spec (options, args, description) for a command |
-| `#fcli.getCommandArgs(command)` | Get the argument definitions for a command |
+| `#fcli.listCommands()` | Processor (for use with `records.for-each::from`) iterating over all available fcli command descriptors |
+| `#fcli.listCommands(query)` | Same, filtered by a SpEL query expression, e.g. `"module=='ssc' && !hidden"` |
+| `#fcli.commandSpec(command)` | Get full spec (module, entity, action, hidden, runnable, usage, aliases, options, metadata) for a fully-qualified command name, e.g. `'fcli ssc app list'`; `null` if not found |
+| `#fcli.commandArgs(command)` | Get `parameters` and `optionGroups` (with names, description, required, datatype, allowedValues, ...) for a command; `null` if not found |
 
 ```yaml
 # Check whether a flag exists before using it
 - var.set:
-    spec: ${#fcli.getCommandSpec('fod issue list')}
-- if: ${spec.options.contains('--fetch')}
+    args: ${#fcli.commandArgs('fod issue list')}
+- if: ${args.optionGroups.![names].contains('--fetch')}
   run.fcli:
     issues: fod issue list --rel=${cli.release} --fetch=1 -o json
 ```
@@ -539,11 +557,28 @@ Query the installed fcli's command structure at runtime. Useful for defensive ac
 | `#jsonStringify(input[, pretty])` | Convert to JSON string |
 | `#properties(input)` | Convert object to key-value pair array |
 | `#resolveAgainstCurrentWorkDir(path)` | Resolve path against CWD |
-| `#uriPart(uri, part)` | Extract URI part (host, path, query, etc.) |
 | `#fs.exists(path)` | Check if file/directory exists |
+| `#fs.isDirectory(path)` | Check if path is an existing directory |
 | `#fs.isFile(path)` | Check if path is a file |
+| `#fs.isReadable(path)` | Check if file/directory exists and is readable |
 | `#fs.isReadableFile(path)` | Check if file is readable |
+| `#fs.isWritable(path)` | Check if file/directory exists and is writable |
 | `#fs.isWritableDir(path)` | Check if directory is writable |
+
+### HTTP (added fcli v3.22.0)
+| Function | Description |
+|----------|-------------|
+| `#basicAuth(username, password)` | Build an HTTP Basic `Authorization` header value: `Basic <base64(username:password)>` |
+| `#bearerAuth(token)` | Build an HTTP Bearer `Authorization` header value: `Bearer <token>` |
+| `#uriPart(uri, part)` | Extract URI part: `serverUrl`, `protocol`, `host`, `port`, `path`, `relativePath`, `query`, or `fragment` |
+| `#urlEncode(input)` | URI-component encode a string (UTF-8) |
+| `#urlDecode(input)` | URI-component decode a string (UTF-8) |
+
+### Base64 (added fcli v3.22.0)
+| Function | Description |
+|----------|-------------|
+| `#base64Encode(input)` | Base64-encode a string (UTF-8) |
+| `#base64Decode(input)` | Base64-decode a string to UTF-8 |
 
 ### Fortify-Specific
 | Function | Description |
@@ -566,22 +601,36 @@ Query the installed fcli's command structure at runtime. Useful for defensive ac
 |----------|-------------|
 | `#action.runID()` | Current fcli run UUID |
 | `#action.copyParametersFromGroup(group)` | Copy CLI options from group |
-| `#opt(name, value)` | Format option if value not blank |
-| `#check(throwError, msg)` | Throw error if condition is true |
-| `#var(name)` | Retrieve stored fcli variable |
+| `#action.fmt(formatterName, input)` | Apply a named formatter (from top-level `formatters`) to arbitrary input |
+| `#opt(name, value)` | Format `name=value` option string if value not blank, else empty string |
+| `#optsFromEnv(input)` | Replace `--opt=ENV_NAME` placeholders with env var values, dropping options whose env var is blank/unset |
+| `#extraOpts(envPrefix)` | Value of `<envPrefix>_EXTRA_OPTS` env var, or empty string |
+| `#fcliCmd(envPrefix, cmd)` | Append `<envPrefix>_EXTRA_OPTS` env var contents to the given fcli command |
+| `#fcliCmdSkipFromEnvReason(envPrefix, skipByDefault)` | Skip reason for `run.fcli::skip.if-reason`, based on `DO_<envPrefix>` / `<envPrefix>_EXTRA_OPTS` env vars |
+| `#actionCmd(envPrefix, moduleName, actionName)` | Build `fcli <module> action run <action> <extra-opts>`, allowing env-var override of the action name |
+| `#actionCmdSkipFromEnvReason(envPrefix, skipByDefault)` | Skip reason variant for action invocations (accounts for `<envPrefix>_ACTION`/`_EXTRA_OPTS`) |
+| `#actionCmdSkipNoActionReason(envPrefix, moduleName, actionName)` | Skip reason if no built-in or env-configured action is available to run |
+| `#actionOrNull(moduleName, actionName)` | Returns the action name if it exists in the given module, else `null` |
+| `#skipBlankEnvReason(envVarName)` | Skip reason if the given environment variable is not set |
+| `#skipReasonIf(skip, reason)` | Returns `reason` if `skip` is true, else `null` |
+| `#check(throwError, msg)` | Throw error with `msg` if `throwError` evaluates to true |
+| `#var(name)` | Retrieve contents of an fcli variable stored via `--store` |
+| `#fcliBuildProperties()` | Installed fcli build properties (version, build date) |
+| `#isDebugEnabled()` | `true` if debug logging is enabled |
+| `#copyright()` | Copyright notice with current year |
 
 ### Encryption
 | Function | Description |
 |----------|-------------|
-| `#encrypt(input)` | Encrypt string |
-| `#decrypt(input)` | Decrypt string |
+| `#encrypt(input)` | Encrypt string (compatible with `fcli util crypto`) |
+| `#decrypt(input)` | Decrypt string (compatible with `fcli util crypto`) |
 
 ---
 
 ## Complete Example: SSC Vulnerability Export to CSV
 
 ```yaml
-# yaml-language-server: $schema=https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.7.0.json
+# yaml-language-server: $schema=https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.9.0.json
 
 author: MyCompany
 
@@ -665,7 +714,7 @@ fcli ssc action run my-vuln-export.yaml --appversion "MyApp:main" --file vulns.c
 ## Complete Example: FoD Policy Check
 
 ```yaml
-# yaml-language-server: $schema=https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.7.0.json
+# yaml-language-server: $schema=https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.9.0.json
 
 author: MyCompany
 

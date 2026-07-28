@@ -70,7 +70,7 @@ fortify-ast-scan:
     SSC_TOKEN: $SSC_TOKEN                       # Masked CI/CD variable — CIToken (unified login token)
     SC_SAST_TOKEN: $SC_SAST_TOKEN               # Masked CI/CD variable — ScanCentral SAST sensor token
     # SSC_APPVERSION: MyApp:main                # Optional: defaults to <group/repo>:<branch>
-    # FCLI_BOOTSTRAP_VERSION: v3.18.0           # Optional: pin fcli version for stability
+    # FCLI_BOOTSTRAP_VERSION: v3.23.0           # Optional: pin fcli version for stability
 ```
 
 For the full list of SSC env vars and optional features (Aviator, Debricked SCA, policy checks, MR comments), fetch the SSC reference URL from [Official documentation](#official-documentation--fetch-when-needed) before generating.

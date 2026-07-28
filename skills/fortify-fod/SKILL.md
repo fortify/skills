@@ -3,10 +3,10 @@ name: fortify-fod
 description: "Perform tasks against Fortify on Demand (FoD): query applications/releases; query & triage existing security issues in FoD; start & monitor full SAST/DAST/SCA/open source scans of the codebase; create releases; import FPR/SARIF/CycloneDX artifacts; policy and portfolio analysis. NOT for lightweight AI review of local code changes/diffs (use fortify-change-review)."
 license: MIT
 metadata:
-  version: "1.2.0"
+  version: "1.2.2"
   tested-with:
-    fcli: "3.18"
-    fod: "26.1"
+    fcli: "3.23"
+    fod: "26.2"
 ---
 
 ---
