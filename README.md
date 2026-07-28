@@ -1,6 +1,6 @@
 # OpenText Fortify Skills
 
-AI agent skills that teach Claude, GitHub Copilot and other AI agents how to use [OpenText Fortify](https://www.opentext.com/products/application-security) effectively — covering SAST/DAST/SCA scanning, vulnerability triage, audit workflows, remediation, dependency upgrades, CI/CD integration, , FCLI commands and more.
+AI agent skills that teach Claude, GitHub Copilot and other AI agents how to use [OpenText Fortify](https://www.opentext.com/products/application-security) effectively — covering SAST/DAST/SCA scanning, vulnerability triage, audit workflows, remediation, dependency upgrades, CI/CD integration, FCLI commands and more.
 
 ## Skills
 

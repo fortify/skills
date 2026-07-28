@@ -3,7 +3,7 @@ name: fortify-dependency-upgrade
 description: "Perform dependency upgrade impact assessment, code fixes, and migration work. Use to remediate Fortify SCA / open source / software composition analysis findings — vulnerable third-party dependencies, CVEs/GHSAs, components flagged by FoD or SSC — by upgrading to a safe version and fixing any resulting breakage. Also use when the user asks what will break after a version change, hits compile/test failures, needs code fixed for compatibility, needs help resolving dependency conflicts, or fixing breaking changes from direct or transitive dependency updates, including framework version changes that affect starters, plugins, annotations, configs, or imports. (For SAST/DAST code findings, use fortify-remediate instead.) Covers npm/yarn, Maven/Gradle, pip/poetry, Go modules, Cargo, Bundler, Composer, NuGet, C++ (CMake/Conan/vcpkg), iOS/macOS (CocoaPods/SPM/Carthage), and Scala (sbt/Mill)."
 license: MIT
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 Dependency upgrades often break more than the manifest line. Follow the workflow below completely before reporting migration complete.

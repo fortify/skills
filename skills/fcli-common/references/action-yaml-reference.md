@@ -538,14 +538,16 @@ Query the installed fcli's command structure at runtime. Useful for defensive ac
 |----------|-----------|
 | `#fcli.listCommands()` | Processor (for use with `records.for-each::from`) iterating over all available fcli command descriptors |
 | `#fcli.listCommands(query)` | Same, filtered by a SpEL query expression, e.g. `"module=='ssc' && !hidden"` |
-| `#fcli.commandSpec(command)` | Get full spec (module, entity, action, hidden, runnable, usage, aliases, options, metadata) for a fully-qualified command name, e.g. `'fcli ssc app list'`; `null` if not found |
-| `#fcli.commandArgs(command)` | Get `parameters` and `optionGroups` (with names, description, required, datatype, allowedValues, ...) for a command; `null` if not found |
+| `#fcli.getCommandSpec(command)` | Get full spec (`module`, `entity`, `action`, `hidden`, `runnable`, `usageHeader`, `usageDescription`, `aliases`, a flat `options` list of all option names, `metadata`) for a fully-qualified command name, e.g. `'fcli ssc app list'`; `null` if not found |
+| `#fcli.getCommandArgs(command)` | Get `parameters` and `optionGroups` (each with `title`, `id`, an `options` list — where each option has `names`, `primaryName`, `description`, `required`, `datatype`, `allowedValues`, ... — and nested `subGroups`) for a command; `null` if not found |
 
 ```yaml
-# Check whether a flag exists before using it
+# Check whether a flag exists before using it.
+# getCommandSpec exposes a flat `options` list of all option names, so a simple
+# .contains(...) is enough.
 - var.set:
-    args: ${#fcli.commandArgs('fod issue list')}
-- if: ${args.optionGroups.![names].contains('--fetch')}
+    spec: ${#fcli.getCommandSpec('fod issue list')}
+- if: ${spec.options.contains('--fetch')}
   run.fcli:
     issues: fod issue list --rel=${cli.release} --fetch=1 -o json
 ```
