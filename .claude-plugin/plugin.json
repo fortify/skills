@@ -20,6 +20,7 @@
     "./skills/fortify-cicd-integration/"
   ],
   "agents": [
-    "./agents/fortify-onboard.agent.md"
+    "./agents/fortify-onboard.agent.md",
+    "./agents/fortify-exploitability-analysis.agent.md"
   ]
 }

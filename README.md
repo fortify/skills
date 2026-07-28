@@ -1,6 +1,6 @@
 # OpenText Fortify Skills
 
-AI agent skills that teach Claude, GitHub Copilot and other AI agents how to use [OpenText Fortify](https://www.opentext.com/products/application-security) effectively — covering SAST/DAST/SCA scanning, vulnerability triage, audit workflows, CI/CD integration, FCLI commands and more.
+AI agent skills that teach Claude, GitHub Copilot and other AI agents how to use [OpenText Fortify](https://www.opentext.com/products/application-security) effectively — covering SAST/DAST/SCA scanning, vulnerability triage, audit workflows, remediation, dependency upgrades, CI/CD integration, , FCLI commands and more.
 
 ## Skills
 
@@ -10,6 +10,7 @@ AI agent skills that teach Claude, GitHub Copilot and other AI agents how to use
 | **fortify-ssc** | Software Security Center (on-premise) — manage application versions, artifacts, scan jobs, issue triage |
 | **fortify-remediate** | Fix SAST and DAST vulnerabilities detected by Fortify; Aviator AI remediation |
 | **fortify-dependency-upgrade** | Remediate SCA / open source findings (vulnerable dependencies, CVEs) by upgrading versions and fixing resulting breakage |
+| **fortify-exploitability-analysis** | Triage whether a known CVE/GHSA is actually exploitable (reachable) in this project, as opposed to just present |
 | **fortify-change-review** | Detect common, high impact security issues in code as it is being generated |
 | **fortify-create-app** | Create new Fortify applications in FoD or SSC — guided onboarding with validation and defaults |
 | **fortify-cicd-integration** | Add Fortify scanning to CI/CD pipelines — GitHub Actions, GitLab CI, Azure DevOps, Jenkins |
@@ -23,6 +24,7 @@ Agents are multi-skill orchestrators that handle end-to-end workflows.
 | Agent | Description |
 |-------|-------------|
 | **fortify-onboarding** | Onboard new applications into Fortify (FoD or SSC) — creates the app, configures settings, and optionally sets up CI/CD scanning pipelines. Handles single repos, bulk lists, or entire GitHub/GitLab/Azure DevOps organizations |
+| **fortify-exploitability-analysis** | Batch-triage a list of known CVEs/GHSAs for reachability across a codebase — sourced from an SBOM, a Fortify on Demand release, an SSC application version, or an explicit list. Produces per-CVE reports plus a combined CycloneDX VEX file |
 
 ## Prerequisites
 
@@ -41,7 +43,7 @@ claude plugin marketplace add fortify/skills
 claude plugin install fortify-skills@fortify
 ```
 
-The plugin registers all nine skills and the onboarding agent automatically.
+The plugin registers all nine skills and both agents automatically.
 
 ### GitHub Copilot
 
@@ -116,6 +118,8 @@ Once installed, the skills activate automatically when relevant. Examples of pro
 | "Upload my FPR and check policy compliance" | fortify-ssc |
 | "Fix the SQL Injection findings in UserService.java" | fortify-remediate |
 | "Remediate the open source / SCA findings by upgrading the vulnerable dependencies" | fortify-dependency-upgrade |
+| "Is CVE-2021-44228 actually exploitable in this project?" | fortify-exploitability-analysis |
+| "Triage all the CVEs in this SBOM for reachability" | fortify-exploitability-analysis (agent) |
 | "Add a new endpoint that returns account details" | fortify-change-review |
 | "Add Fortify scanning to my GitHub Actions workflows" | fortify-cicd-integration |
 | "Create a custom fcli action to export FoD critical issues as CSV" | fortify-fod + fcli-common |
