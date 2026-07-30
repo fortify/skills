@@ -67,7 +67,7 @@ FoD and SSC use different field names for the same concepts. Use this mapping wh
 
 ---
 
-## Step 1: Identify the Target Issue Seth
+## Step 1: Identify the Target Issue Set
 
 > Load `references/issue-targeting.md` before working through this step.
 
