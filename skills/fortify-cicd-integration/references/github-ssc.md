@@ -82,7 +82,7 @@ jobs:
           SSC_TOKEN: ${{ secrets.SSC_TOKEN }}       # SSC CIToken (unified login token)
           SC_SAST_TOKEN: ${{ secrets.SC_SAST_TOKEN }} # ScanCentral SAST sensor token
           # SSC_APPVERSION: MyApp:main              # Optional: defaults to <repo>:<branch>
-          # FCLI_BOOTSTRAP_VERSION: v3.18.0         # Optional: pin for stability
+          # FCLI_BOOTSTRAP_VERSION: v3.23.0         # Optional: pin for stability
 ```
 
 For the full list of SSC env vars and optional features, fetch the SSC reference URL from [Official documentation](#official-documentation--fetch-when-needed) before generating.

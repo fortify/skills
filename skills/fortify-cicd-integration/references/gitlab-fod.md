@@ -69,7 +69,7 @@ fortify-ast-scan:
     DO_SCA_SCAN: "true"                         # Enable SCA (open source) scanning
     DO_AVIATOR_AUDIT: "true"                    # Enable AI-assisted audit
     # FOD_RELEASE: MyApp:main                   # Optional: defaults to <group/repo>:<branch>
-    # FCLI_BOOTSTRAP_VERSION: v3.18.0           # Optional: pin fcli version for stability
+    # FCLI_BOOTSTRAP_VERSION: v3.23.0           # Optional: pin fcli version for stability
 ```
 
 ### Customisation guidance

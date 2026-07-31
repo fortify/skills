@@ -3,11 +3,11 @@ name: fortify-create-app
 description: "Create new Fortify application(s) in Fortify on Demand (FoD) or Application Security Center (SSC)."
 license: MIT
 metadata:
-  version: "1.0.1"
+  version: "1.0.3"
   tested-with:
-    fcli: "3.18"
-    fod: "26.1"
-    ssc: "25.4"
+    fcli: "3.23"
+    fod: "26.2"
+    ssc: "26.2"
 ---
 
 Creating an app is a 3-step process. Work through steps in order — each step has a clear entry condition and output that feeds the next.

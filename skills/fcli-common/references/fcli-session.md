@@ -52,7 +52,7 @@ fcli ssc session ls
 ## CI/CD Considerations
 
 - Set `FCLI_STATE_DIR` to a pipeline-specific path (e.g., a temp directory scoped to the job) to prevent session collisions between concurrent pipeline runs.
-- Pin `@fortify/setup` to a specific fcli version for reproducible CI builds: `npx @fortify/setup@2 env init --tools=fcli:v3.18.0`
+- Pin `@fortify/setup` to a specific fcli version for reproducible CI builds: `npx @fortify/setup@2 env init --tools=fcli:v3.23.0`
 - Verify session is still valid server-side with `--validate` — useful when tokens may be revoked between runs and you can't trust the locally cached expiry:
 
 ```bash

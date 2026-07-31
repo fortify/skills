@@ -3,11 +3,11 @@ name: fortify-remediate
 description: Remediate SAST (static) and DAST (dynamic) security vulnerabilities ALREADY detected by Fortify in FoD or SSC — fix specific issues, categories, or reduce issue counts, including applying SAST Aviator fixes. For SCA / open source dependency findings (vulnerable third-party components, CVEs), use fortify-dependency-upgrade instead. NOT for discovering or reviewing new issues (use fortify-change-review for a local code-change review, or fortify-fod / fortify-ssc to scan and triage).
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.1.1"
   tested-with:
-    fcli: "3.18"
-    fod: "26.1"
-    ssc: "25.4"
+    fcli: "3.23"
+    fod: "26.2"
+    ssc: "26.2"
 ---
 
 # Fortify Remediation
@@ -67,7 +67,7 @@ FoD and SSC use different field names for the same concepts. Use this mapping wh
 
 ---
 
-## Step 1: Identify the Target Issue Seth
+## Step 1: Identify the Target Issue Set
 
 > Load `references/issue-targeting.md` before working through this step.
 

@@ -4,7 +4,7 @@ Fcli actions are YAML files that define automation workflows for Fortify CLI. Th
 
 **Key references:**
 - [Action Development Guide](https://fortify.github.io/fcli/latest/action-development.html)
-- [Action Schema (v2.7.0)](https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.7.0.json)
+- [Action Schema (v2.9.0)](https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.9.0.json)
 - [Built-in action source code](https://github.com/fortify/fcli/tree/dev/v3.x/fcli-core)
 
 **Local references (load when needed):**
@@ -34,7 +34,7 @@ Before writing any YAML, clarify the action's purpose:
 Every action YAML file requires these primary instructions. Use the schema reference for IDE code-completion and validation.
 
 ```yaml
-# yaml-language-server: $schema=https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.7.0.json
+# yaml-language-server: $schema=https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.9.0.json
 
 author: <organization or individual name>
 
@@ -60,7 +60,7 @@ steps:
 
 **Critical rules:**
 - The `$schema` declaration is **required** — either as a YAML comment (`# yaml-language-server: $schema=...`) or as a YAML property (`$schema: ...`). At least one must be present.
-- Current schema version is **2.7.0** for fcli 3.16.0. Always use `https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.7.0.json` (not the `-dev-` URL).
+- Current schema version is **2.9.0** for fcli 3.23.x. Always use `https://fortify.github.io/fcli/schemas/action/fcli-action-schema-2.9.0.json` (not the `-dev-` URL).
 - `author`, `usage` (with `header` and `description`), and `steps` are **required**.
 
 ---

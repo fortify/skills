@@ -3,9 +3,9 @@ name: fortify-cicd-integration
 description: Integrate Fortify application security (SAST, SCA, DAST) with GitHub Actions, GitLab Pipelines, Azure DevOps, Jenkins & other CICD/DevSecOps pipelines.
 license: MIT
 metadata:
-  version: "1.0.1"
+  version: "1.0.2"
   tested-with:
-    fcli: "3.18"
+    fcli: "3.23"
 ---
 
 # Fortify CI/CD Integration

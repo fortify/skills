@@ -3,10 +3,10 @@ name: fortify-ssc
 description: "Perform tasks against Fortify SSC (Software Security Center): query applications/application versions; query & triage existing security issues in SSC; start & monitor full ScanCentral SAST/DAST scans or upload FPR artifacts; create app versions; policy and portfolio analysis. NOT for lightweight AI review of local code changes/diffs (use fortify-change-review)."
 license: MIT
 metadata:
-  version: "1.2.0"
+  version: "1.2.2"
   tested-with:
-    fcli: "3.18"
-    ssc: "25.4"
+    fcli: "3.23"
+    ssc: "26.2"
 ---
 
 >SSC may also be referred to as "Fortify Software Security Center".
