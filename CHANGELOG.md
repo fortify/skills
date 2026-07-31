@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.3.0](https://github.com/fortify/skills/compare/v1.2.0...v1.3.0) (2026-07-31)
+
+
+### Features
+
+* Add `fortify-exploitability-analysis` agent ([52fd54e](https://github.com/fortify/skills/commit/52fd54ed0adf85beeb796720eae9f26a2aa7aa01))
+
+
+### Bug Fixes
+
+* `fortify-exploitability-analysis` now references `fortify-dependency-upgrade` ([52fd54e](https://github.com/fortify/skills/commit/52fd54ed0adf85beeb796720eae9f26a2aa7aa01))
+* Bump fcli version to 3.23 ([52fd54e](https://github.com/fortify/skills/commit/52fd54ed0adf85beeb796720eae9f26a2aa7aa01))
+* Improve guardrails within skills ([52fd54e](https://github.com/fortify/skills/commit/52fd54ed0adf85beeb796720eae9f26a2aa7aa01))
+
 ## [1.2.0](https://github.com/fortify/skills/compare/v1.1.1...v1.2.0) (2026-06-29)
 
 
