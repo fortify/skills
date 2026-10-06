@@ -8,6 +8,7 @@ AI agent skills that teach Claude, GitHub Copilot and other AI agents how to use
 |-------|-------------|
 | **fortify-fod** | Fortify on Demand (SaaS) — applications, releases, scans, issues, OSS analysis, portfolio reporting |
 | **fortify-ssc** | Software Security Center (on-premise) — manage application versions, artifacts, scan jobs, issue triage |
+| **fortify-ssc-report-dev** | Create, enhance and troubleshoot SSC custom BIRT reports with portable SQL, render validation and rollback checkpoints |
 | **fortify-remediate** | Fix SAST and DAST vulnerabilities detected by Fortify; Aviator AI remediation |
 | **fortify-dependency-upgrade** | Remediate SCA / open source findings (vulnerable dependencies, CVEs) by upgrading versions and fixing resulting breakage |
 | **fortify-exploitability-analysis** | Triage whether a known CVE/GHSA is actually exploitable (reachable) in this project, as opposed to just present |
@@ -32,6 +33,10 @@ Agents are multi-skill orchestrators that handle end-to-end workflows.
 - An active Fortify on Demand (FoD) or Software Security Center (SSC) account
 - An AI assistant that supports Agent Skills (Claude Code, GitHub Copilot, Cursor, Gemini CLI, etc.)
 
+SSC custom report development can also start offline from a seed bundle. FCLI and an active account
+are needed only for platform operations; runtime and read-only DB/export availability determine
+which report tests can be performed.
+
 ## Installation
 
 ### Claude Code
@@ -43,7 +48,7 @@ claude plugin marketplace add fortify/skills
 claude plugin install fortify-skills@fortify
 ```
 
-The plugin registers all nine skills and both agents automatically.
+The plugin registers all skills and both agents automatically.
 
 ### GitHub Copilot
 
@@ -84,7 +89,7 @@ To make the plugin available across all workspaces, add an entry to your persona
 }
 ```
 
-Then restart Codex. The plugin registers all nine skills automatically.
+Then restart Codex. The plugin registers all skills automatically.
 
 ### Gemini CLI
 
@@ -94,7 +99,7 @@ Install directly from the GitHub repository:
 gemini extensions install https://github.com/fortify/skills
 ```
 
-The extension bundles all nine skills. Gemini CLI auto-discovers them and activates whichever skill is relevant to your task.
+The extension bundles all skills. Gemini CLI auto-discovers them and activates whichever skill is relevant to your task.
 
 To test locally before publishing:
 

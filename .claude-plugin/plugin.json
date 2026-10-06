@@ -11,6 +11,7 @@
   "skills": [
     "./skills/fortify-fod/",
     "./skills/fortify-ssc/",
+    "./skills/fortify-ssc-report-dev/",
     "./skills/fortify-exploitability-analysis/",
     "./skills/fcli-common/",
     "./skills/fortify-remediate/",
