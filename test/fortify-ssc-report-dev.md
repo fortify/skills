@@ -3,6 +3,7 @@
 Run these scenarios in isolated report workspaces using approved read-only fixtures or mocks.
 Do not run paid scans, mutate SSC, import seed bundles, or install plugins to satisfy a scenario.
 These are behavioral evaluation prompts, not an automated cross-database/render certification suite.
+Each scenario has its own report purpose; issue/workbook scenarios do not define defaults for the others.
 
 ## Step 1: Enhance A Mixed-Engine Workbook
 
@@ -167,3 +168,52 @@ These are behavioral evaluation prompts, not an automated cross-database/render 
 - Trace and handle nested parameters, bindings, styles, scripts and other dependencies rather than copying only a grid.
 - Record source versions and an upgrade comparison/test plan, including manual porting of relevant copied-dataset fixes.
 - Do not alter shared libraries, bulk-copy unrelated elements, or deploy without the user's selected scope/approval.
+
+## Step 12: Develop A Historical Portfolio Trend
+
+**Prompt:**
+
+> Enhance an SSC trend report for several application versions over a selected date range. The seed
+> example reads snapshot measurement and variable history. Preserve the intended boundary-date
+> selection and missing-period behavior; I do not need engine inventory or issue descriptions.
+
+**Expected behavior:**
+
+- Establish portfolio scope, row/measurement grain, date types/timezone and interval boundaries.
+- Inspect relevant history queries and scope/date helpers rather than substituting current issue counts.
+- Distinguish interval observations from the latest sample at or before a boundary; do not blindly sum history rows.
+- Verify multi-version scope, ordering, missing intervals and source-to-chart aggregation with independent history evidence.
+- Request only applicable parameters; do not require an issue filter-set GUID or add engine/detail/mapping sections.
+- Preserve cross-DB portability and test the chosen chart/output formats with one checkpoint per successful change.
+
+## Step 13: Preserve Portfolio KPI Meaning
+
+**Prompt:**
+
+> Update a portfolio KPI grouped by project metadata. It uses several selected versions and a scope
+> helper. Preserve its raw-severity risk calculation and percentage definition, including no-scan and
+> zero-denominator cases. Do not add a Fortify priority or external-category breakdown.
+
+**Expected behavior:**
+
+- Trace selected versions, metadata join cardinality, scope helper expansion and final aggregation grain.
+- Define units, numerator/denominator, weighting and null/zero behavior before changing the calculation.
+- Do not replace raw severity with `friority`, count all versions indiscriminately, or average percentages without checking the intended weighting.
+- Validate independent metrics for multiple metadata values, missing scans and zero denominators.
+- Choose regression consumers according to the affected scope/metric helper, not a fixed workbook/OWASP report list.
+
+## Step 14: Trace Scripted Data And Cube Presentation
+
+**Prompt:**
+
+> A report's SQL preview is correct but its chart and crosstab disagree. It has computed columns,
+> a scripted dataset and cube aggregations. Fix the calculation and label wrapping in the requested
+> output formats without adding issue-detail logic.
+
+**Expected behavior:**
+
+- Follow the displayed value through scripted/computed data, cube dimensions/measures, grouping and chart expressions.
+- Check filters, sorting, conditional branches and double aggregation before blaming the SQL.
+- Validate actual calculation boundaries and appropriate data/output fixtures, rather than issue-count SQL alone.
+- Check axis/legend/crosstab labels, units and wrapping visually as well as task errors.
+- Load optional issue/engine/external-list examples only if the actual changed feature needs them.

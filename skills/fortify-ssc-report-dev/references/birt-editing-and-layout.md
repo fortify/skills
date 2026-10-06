@@ -37,10 +37,10 @@ Record each copied element's source bundle/library version, customized behavior 
 in the agreed record. Keep a pristine comparison baseline. Licensed resources remain subject to their
 distribution terms; copying into a customer template does not make them public skill assets.
 
-An observed external-list report delegated most layout/data to
-`FortifyExternalListIssueReport`, `FortifyExternalListCommonSections`,
-`FortifyExternalListBasicElements`, and `FortifyBasicElements`. Developer Workbook had local sections
-plus inherited components. Changing a shared element can affect both families and other reports.
+Inheritance varies by report family: sampled WIE templates inherited parameters/components from
+`FortifyWIEElements`, while project and workbook templates mixed local logic with common components.
+External-list templates also reused dedicated libraries. Follow the actual dependencies rather than
+assuming a previous report's ownership graph applies to the next one.
 
 For new reports, use a small compatible seed example with working datasource and parameters rather
 than immediately cloning the largest report. If registration is required, inspect the installed
@@ -61,32 +61,32 @@ than immediately cloning the largest report. If registration is required, inspec
   different encoding layers. Never globally replace names/engine codes across the whole report.
 - Retain bookmark/TOC identifiers when relocating headings, and validate navigation after the move.
 
-In one workbook, rebinding Engine Breakdown to a local dataset dropped inherited aggregate aliases
+Illustrative binding failure: in one workbook, rebinding a table to a local dataset dropped aggregate aliases
 `sca`, `wi`, `ss`, and `total`. The SQL itself executed correctly, but BIRT returned
 `Invalid bound column name`. Copying the required bindings fixed it.
 An outer-grid `Error.ReportQueryLoadingError` was only a wrapper for those nested errors.
 
 ## Step 3: Make Small Structural Changes
 
-Copy only the subcomponent needed to insert a group/row that cannot be added through inheritance.
-When replacing a grid, inspect all its cells: an engine grid in the observed workbook also contained
-Project Name and Project Version. Replacing the grid without preserving those rows removed identity.
+Within the selected dependency strategy, copy the required owning component and dependency closure.
+For a targeted structural edit, start with the smallest suitable component. Inspect all content before
+replacing it; a grid may contain identity, summary values or other unrelated cells as well as the target.
 
-Use column tracks whose widths sum to the available table/page width. A practical engine table has:
+Use column tracks whose widths sum to the available table/page width. Check multirow headers, spans,
+repeated headers, and dynamic columns or crosstab dimensions if present. For charts, preserve intended
+axes, series, labels, legends and measurement units. Choose layout based on output format and purpose,
+not a universal severity/engine table design.
 
-- Engine Type spanning both header rows.
-- Category label spanning the severity columns, with `(audited / total)` in the same text channel.
-- Critical/High/Medium/Low second-row labels.
-- A Total column spanning the header rows.
+Reuse appropriate seed styles where that matches the report's visual language. Verify resolved colors,
+fonts and highlight rules rather than relying on style names. Match comparable labels and values;
+severity colors are relevant only to severity-oriented displays. Readability of trend lines, legends
+and aggregate dimensions may be the actual concern for other reports.
 
-Use shared seed styles when appropriate: observed examples included `headerTable0Small` (blue),
-`friorityCritical`, `friorityHigh`, `friorityMedium`, `friorityLow`, and `alternatingRowColor`.
-Verify actual colors and highlight rules; a style described as alternating can use two grays rather
-than white/gray. Match font size between project identity and engine status rows, not merely family.
-
-Place `verticalAlign=top` on spanning header cells when aligning Engine Type/Total with category text.
+Place `verticalAlign=top` on spanning header cells when top alignment is the requested layout.
 BIRT HTML may emit `valign="top"` rather than CSS `vertical-align`; check both.
-Prefer plain-text expressions for engine/category labels and explicit line-break handling.
+Prefer plain-text expressions for labels and explicit line-break handling.
+For any report rendering rich input, use a vetted allowlist sanitizer rather than treating arbitrary
+stored text as trusted HTML. Bind data as values, not dynamically evaluated template/script source.
 Use consistent report-generated description heading styles instead of fragile regex rewriting of
 rich finding descriptions. Do not mislabel different content channels merely to make headings match.
 
@@ -98,12 +98,12 @@ and available page height. A keep-with-next chain can move a whole cluster to th
 
 Start with the smallest controlling break. Use PDF evidence after each change:
 
-1. Category heading with Issue Summary and Engine Breakdown.
-2. Results Outline section heading with its first category.
-3. Engine Breakdown with the first description where the available page height permits it.
-4. No new blank page immediately before or after the moved content.
+1. A section/group heading stays with the intended following content.
+2. Repeated rows, charts or crosstabs paginate according to the agreed layout.
+3. Header/content adjacency is maintained where available page height permits it.
+4. No new blank page appears immediately before or after moved content.
 
-An observed workbook was improved by keeping the category-title row with the following summary rows.
+As an optional example, a workbook was improved by keeping the category-title row with the following summary rows.
 For its section-level split, removing a redundant list master page was insufficient. Moving Results
 Outline into the first category's layout and removing the old outer forced break fixed the split.
 
@@ -125,8 +125,9 @@ manually, preserving custom behavior; do not blindly replace a customized query 
 Recheck cross-DB support and rerun count/render/layout tests on the target SSC version.
 
 For shared libraries, use the reverse dependency graph plus runtime checks of actual branches.
-Suggested representative consumers include Developer Workbook, an OWASP list report, a CWE list
-report, and a project report, when those templates use the changed component.
+Choose representative consumers from the actual dependency graph and changed behavior: for example,
+a trend report for a history-query change, a portfolio report for a scope helper, or a detail/table
+report for a shared binding/layout change. Do not always select the same workbook/external-list set.
 
 When handing off, include only changed deliverable resources and agreed definition entries.
 Keep checkpoint designs outside seed-bundle import/discovery paths; otherwise a packaging process

@@ -27,11 +27,13 @@ unzip -l "$SEED_ZIP"
 unzip "$SEED_ZIP" -d "$REPORT_WORKDIR"
 ```
 
-A seed bundle observed in SSC 26.2 contained `NewDevWorkbook.rptdesign`,
-`DeveloperWorkBook.rptdesign`, `FortifyBasicElements.rptlibrary`,
-`FortifyCompositeElements.rptlibrary`, `FortifyF360DataSource.rptlibrary`, supporting `.js` files,
-and `ReportDefinitions.xml`/`ReportLibraryDefinitions.xml`. These are examples, not a universal manifest.
-Check report definitions to determine the active workbook; do not infer it from file size or name.
+A seed bundle observed in SSC 26.2 contained trend/KPI reports (`issueTrend.rptdesign`, `kpi.rptdesign`),
+project and correlation reports, issue workbooks, and WIE/external-list reports. Its resources included
+`FortifyBasicElements.rptlibrary`, `FortifyReportLibrary.rptlibrary`, `FortifyWIEElements.rptlibrary`,
+`FortifyF360DataSource.rptlibrary`, supporting `.js` files, and
+`ReportDefinitions.xml`/`ReportLibraryDefinitions.xml`. These are examples, not a universal manifest.
+Choose a relevant report family and resolve the actual target template through report definitions;
+do not infer it from file size, filename, or a previously customized workbook.
 
 Keep styles, includes, datasource definitions, scripts, images and registration entries together.
 For new reports, use these as reference implementations, not files to redistribute under this skill's license.
@@ -98,7 +100,8 @@ must still meet the cross-database contract.
 ## Step 4: Record The Reproduction Environment
 
 Keep nonsecret facts with the agreed test record: SSC/seed/Java/BIRT/JDBC versions, DB vendor,
-report-resource paths, datasource strategy, locale, application version and filter-set parameters.
+report-resource paths, datasource strategy, locale and the parameters relevant to the report's scope
+(for example, selected versions, date ranges, dimensions or a filter set).
 Do not publish customer names, URLs, issue bodies or credentials in this skill/repo.
 
 A local test against one SSC instance cannot reproduce errors on another by reading the local logs.

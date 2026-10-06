@@ -19,7 +19,8 @@ Generate a small Java runner using the target runtime's APIs. Its required behav
 3. Create `EngineConfig`, set the report-resource directory and parent classloader, then start BIRT.
 4. Inject a caller-owned JDBC connection into engine/task context if the selected runtime supports it.
 5. Open the design and create an `IRunAndRenderTask`; pass parameters in their proper Java types.
-6. Select HTML or PDF render options, run, inspect `getErrors()` and all nested causes, and exit nonzero
+6. Select the requested runtime-supported emitter/options (for example HTML or PDF), run,
+   inspect `getErrors()` and all nested causes, and exit nonzero
    on thrown exceptions or recorded task errors.
 7. Close the task, destroy the engine, shut down BIRT and close JDBC in cleanup, including failure paths.
 
@@ -60,9 +61,9 @@ java -cp "$BIRT_RUNTIME_DIR/*:$JDBC_DRIVER_JAR:." ReportRunner <runner-specific-
 
 On Windows the classpath separator is `;`, not `:`. Use the selected runtime's supported Java version.
 Runner arguments can name input/output/parameter files but must not contain passwords.
-Typical SSC parameters include `projectversionid` as a numeric value and `filterSetGuid` as a string;
-read the actual template definition, since defaults, names and types vary. Do not infer required types
-from a successful literal SQL query.
+Version-scoped issue reports may use `projectversionid` as a numeric value and `filterSetGuid` as a string;
+other reports can use portfolio selectors, date ranges, dimensions or different inputs. Read actual
+template/library definitions, defaults and types. Do not infer required types from a literal SQL query.
 
 ## Step 2: Establish A Baseline And Diagnostics
 
@@ -74,7 +75,7 @@ Validation tiers are separate:
 | Check | What it proves |
 |-------|----------------|
 | XML/frontmatter parsing, IDs, names, dependency paths | Static structural consistency |
-| Parameterized JDBC query and result metadata | Selected DB/driver query compatibility |
+| Parameterized JDBC query or scripted-dataset checks | Selected data path and input/output compatibility |
 | BIRT task with zero recorded/thrown errors | Runtime wiring and execution in that environment |
 | Rendered HTML/CSS/attributes | Actual labels, spans, styles and font/alignment behavior |
 | PDF text/page checks plus visual inspection | Page placement, clipping/wrapping and visual acceptance |
@@ -94,33 +95,33 @@ inline/legacy attributes (`valign`, `align`, `rowspan`, `colspan`) as well as vi
 Resolve inherited font/style values; a CSS-only assertion may miss valid HTML alignment attributes.
 
 For PDF, use an available page-text extractor (`pdftotext`, an approved PDF library, or OpenPDF when
-already in the BIRT runtime). Confirm section/category/table ordering and inspect the predecessor
+already in the BIRT runtime). Confirm section/group/content ordering and inspect the predecessor
 page for blank/header-footer-only output. Page-text checks cannot prove visual alignment or clipping;
 use rendered-page images or manual inspection for those requirements.
 
-Acceptance examples derived from mixed-engine workbook development:
+Derive acceptance checks from the report purpose and changed feature, for example:
 
-- Executive project name/version remain after replacing the engine component.
-- Inventory displays enabled/installed engines only under the agreed semantics; standard absent
-  engines get Not Present, or a present-only list has an explicit Results Present heading.
-- Raw `SCA` can display as `Fortify SAST` without changing joins or identifiers.
-- Each selected category appears, including plugin-only categories lacking rule text.
-- Critical/High/Medium/Low and Total match independent SQL counts; audited values do too.
-- Severity sum equals Total for a fixture with only the four recognized priorities; diagnose rather
-  than hide unexpected/NULL priorities if the equality fails.
-- Exactly one body Results Outline heading exists, separate from its TOC entry, including empty results.
-- Section heading/first category and each category/summary/table share pages as agreed; no blank page appears.
-- Spanning header cells are top-aligned, the widths fit, and colors/alternating rows match the seed style.
-- Distinct descriptions are not collapsed merely because their category or rule identifier matches.
+- Scope and identity remain correct for the selected application/version/portfolio or other population.
+- Tables, charts and crosstabs reconcile with independent source data at their defined grain.
+- Historical series use the intended intervals, boundary observations and missing-period convention.
+- Calculated measures preserve units, weighting, denominators, rounding and null/zero semantics.
+- Selected dimensions, conditional sections, sorting and locale behave correctly.
+- Headings, navigation, header spans, wrapping and chart readability meet the requested layout in each output.
+- Empty results are intentional, understandable and do not erase required section context.
+- Joins and optional enrichment do not unexpectedly duplicate or remove intended records.
 
-Include empty results and at least one populated branch for each new formatter/condition.
-When a fixture lacks audited issues, supplement with a safe isolated formatter test or another
-approved read-only fixture. Do not mutate SSC to manufacture audited findings.
+Issue/engine/external-list acceptance examples are in the optional reference routed by the main skill;
+do not require engine inventories, priority tables or detailed descriptions in every report.
+
+Include empty results and a populated case for each changed branch. Depending on the feature, add
+multiple versions, date boundaries, missing periods, metadata selections, zero denominators or
+issue-specific conditions. Supplement gaps with isolated calculation tests or another approved
+read-only fixture. Do not mutate SSC to manufacture test data.
 
 ## Step 4: Maintain Immutable Checkpoints
 
 Before editing, save an unmodified baseline and required resource versions. For each successful step,
-choose a unique noncolliding name such as `DeveloperWorkbook.<timestamp>-03-engine-counts.rptdesign`
+choose a unique noncolliding name such as `<ReportName>.<timestamp>-03-metric-calculation.rptdesign`
 in an agreed checkpoint directory outside the deployable bundle. Preserve changed libraries too.
 
 Do not execute a render/check and then copy regardless of its exit code. Gate the copy explicitly on
@@ -141,7 +142,7 @@ runtime/schema facts or visual output needed to proceed.
 ## Step 5: Validate And Package The Handoff
 
 For a template change, verify the complete report as well as the focused slice. For a shared-library
-change, run the agreed dependent report set. Compare final user-visible identity, counts, descriptions
+change, run the agreed dependent report set. Compare final user-visible context, measures, content
 and navigation with the baseline to catch unrelated losses.
 
 List the best checkpoint and how to reproduce its tests. Identify which SSC instance/DB/runtime was

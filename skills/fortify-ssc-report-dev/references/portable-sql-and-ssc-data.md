@@ -4,8 +4,8 @@
 
 Default targets are MySQL, Microsoft SQL Server and Oracle. An explicitly customer-specific report may
 use a narrower target; record that exception. Check supported DB versions for the target SSC release.
-Inspect actual schema/view definitions and seed queries before adding joins; names here describe an
-observed SSC 26.2 schema, not a stable public schema contract.
+Inspect actual schema/view definitions and seed queries before adding joins. Seed reports use
+version-dependent internal objects and helper scripts, not a stable public schema contract.
 
 Prefer portable `CASE`, `COALESCE`, joins and aggregates over scalar, non-LOB columns. Bind all values
 through JDBC parameters. Dynamic identifiers need an allowlist; parameters cannot bind identifiers.
@@ -27,103 +27,88 @@ Date arithmetic, casts, identifier quoting, collation, case sensitivity and ORDE
 also need review. Do not infer SQL `TOP` usage from report titles or JavaScript `.substring()` calls.
 Even standard constructs need compatible types, aliases, metadata and cardinality checks.
 
-### Example: Portable Measures
-
-After confirming these columns in the target schema, use this kind of parameterized query:
-
-```sql
-SELECT i.engineType AS ENGINE_CODE,
-       COUNT(*) AS ISSUE_COUNT,
-       SUM(CASE WHEN i.friority='Critical' THEN 1 ELSE 0 END) AS CRITICAL_COUNT,
-       SUM(CASE WHEN i.friority='Critical' AND i.audited='Y' THEN 1 ELSE 0 END) AS CRITICAL_AUDITED,
-       SUM(CASE WHEN i.audited='Y' THEN 1 ELSE 0 END) AS TOTAL_AUDITED
-FROM baseissueview i
-INNER JOIN issuecache ic ON ic.issue_id=i.id AND ic.projectVersion_id=i.projectVersion_id
-INNER JOIN filterset fs ON fs.id=ic.filterSet_id AND fs.projectVersion_id=i.projectVersion_id
-WHERE i.projectVersion_id=? AND fs.guid=? AND i.mappedCategory=?
-  AND ic.hidden='N' AND i.suppressed='N' AND i.scanStatus<>'REMOVED'
-GROUP BY i.engineType
-ORDER BY i.engineType
-```
-
-Ensure the cache/filter-set join produces one row per selected issue; otherwise counts multiply.
-Use the same predicates for category drivers, details, summaries and independent count checks.
-Do not use `DISTINCT` as a blanket repair for a broken join.
-
 Execute on every target DB when available. If only one is available, perform portability review and
 explicitly report the remaining engine tests as unverified; do not claim three-DB certification.
 
-## Step 2: Separate Issue Inclusion From Optional Enrichment
+## Step 2: Establish Row Grain And Source Of Truth
 
-Useful observed objects include `baseissueview`, `defaultissueview`, `issuecache`, `filterset`,
-`projectversion_rule`, `ruledescription`, `rule_t`, `ruleview`, `scan`, `pluginmetadata`, and catpack tables.
+Define what one source row and one output row represent: application/version, scan, snapshot,
+measurement, correlated group, issue, metadata selection, or an aggregate. Choose the driving source
+that matches that purpose, rather than always starting from current issues.
 
-- Drive category/detail inclusion from selected issues, not from rule descriptions.
-- Treat rule text, external mappings, source snippets and plugin metadata as optional enrichments.
-- Keep project-version scoping in joins and check engine/rule-key collisions.
-- Rule text lookup through `projectversion_rule` can account for overridden descriptions; a direct
-  `issue.ruleGuid = ruledescription.guid` join is not always equivalent.
-- Select a deterministic locale from available rule text, with an agreed fallback. Multiple language
-  or rule-description rows must not duplicate findings or arbitrarily change text.
+- Use join types that implement the intended inclusion rules. Optional enrichment must not remove
+  required records; deliberate mandatory joins may legitimately restrict the population.
+- Check join cardinality at the selected grain. Multiple scans, language rows, metadata values or
+  history samples can multiply a measure even if the final table looks plausible.
+- Keep identifiers scoped correctly; some reports select one version while others aggregate a portfolio.
+- Separate keys used for selection/grouping from friendly display labels and translated names.
+- Use the same defined population in independent validation queries; do not repair unknown duplicates
+  by adding `DISTINCT` blindly.
 
-A Developer Workbook observed in SSC 26.2 drove its Results Outline through `ruledescription` and
-`ruleview`, while its overview counted issues directly. FAA and Debricked issues existed but had no
-matching project-rule metadata. This caused missing categories in the outline, not missing issues in SSC.
-The repair was issue-driven inclusion with optional rule text, not inserting fake rules in the DB.
+Illustrative patterns observed in an SSC seed bundle:
 
-## Step 3: Preserve Visibility And Count Meaning
+| Example | Data pattern | Relevant development concern |
+|---------|--------------|------------------------------|
+| `issueTrend.rptdesign` | Snapshot-backed `measurementhistory` and `variablehistory`, with date parameters | Historical observations and interval/boundary semantics, not just current issue totals |
+| `kpi.rptdesign` | Multi-version scope helpers, metadata dimensions and derived measures | Authorized portfolio selection, grouping and metric definition |
+| `project_report.rptdesign` | Risk calculations, project metadata and first/last scan dates | Scope, units, aggregation level and missing scans |
+| `AppSecCorrelation.rptdesign` | Scan-context and finding datasets, including latest-per-engine scan information | Appropriate scan selection and correlation/count meaning |
+| `NewWIEVulnerability.rptdesign` | Library-inherited parameters/components | Follow the owning library rather than assuming all data logic is local |
 
-The issue's global `hidden` flag and `issuecache.hidden` for a chosen filter set may disagree.
-Always use the report's selected filter-set semantics consistently; otherwise headers can report
-categories whose detail queries return no rows, or counts can disagree between sections.
+These are reference choices, not prescribed templates or fixed schema contracts. Choose only the
+family relevant to the requested report. Issue-detail and external-list examples are optional and
+are routed separately from the main skill.
 
-Document treatment of suppressed, hidden, removed, audited and correlated issues. The historical
-column `friority` represents Fortify priority; do not substitute raw `severity` or engine priority.
-For audited/total display, follow the report's existing audited predicate and label the convention.
-Avoid dividing or interpreting `0 / 0` as a percentage; a bare `0` may match the existing table style.
+## Step 3: Preserve Scope, Time And Metric Meaning
 
-Test no findings, one finding, mixed engines, nonzero audited counts, and filter-set changes.
-Use independent fixtures or test-only report copies if production data lacks a branch; never alter DB
-data to manufacture a test case. Such test copies are not deployable deliverables.
+Read the report's actual parameters, scripts and query logic. Only request a version/filter-set GUID
+when the report uses them; portfolio selectors, date ranges, measurement definitions or metadata
+filters may be the relevant inputs instead.
 
-## Step 4: Group Descriptions Without Losing Information
+For history/trend reports, establish:
 
-Agree on the content channels that define equality: abstract, explanation, remediation and any tips
-or references that the report actually renders. Equal category alone does not imply equal description.
-Define whether line-ending normalization, null/empty equivalence or markup normalization is intended.
-Compare exact content tuples under that policy; do not normalize away meaningful text silently.
+- Current state versus snapshot/measurement history or an as-of-date value.
+- Date storage type/units, input timezone, inclusive/exclusive boundaries and ordering.
+- Which observation is selected at an interval boundary; a latest sample before a date is not a sum.
+- Whether absent periods mean no observation, zero, carry-forward or another explicitly defined behavior.
+- Selection grain: latest overall scan, latest per version, latest per engine or all observations.
 
-Grouping by rule-description ID is a cheaper identity-based optimization, but does not combine two
-different IDs with equal text. State that limitation if the user accepts it. Selecting `MAX(ruleGuid)`
-per category chooses arbitrary content and can put findings under the wrong description.
+Do not assume scan/snapshot dates are SQL timestamps rather than numeric values. Review conversions
+in JDBC parameters and report scripts, and preserve boundary conventions unless intentionally changed.
+Stored historical values need not equal a recalculation from today's issue records.
 
-Use BIRT/scripted grouping with cached rule lookups or a verified preprocessing layer for exact
-long-text grouping. Distinguish key domains for rule-backed and issue-text-backed groups, null versus
-literal "null", and separate tuple fields unambiguously. If hashing is used, verify full content on
-collisions. Assess memory and query count; do not repeat a multi-kilobyte SAST description per issue
-unless the user explicitly chooses that tradeoff.
+For KPI/summary/correlation reports, define numerators, denominators, units, weighting, null handling,
+rounding and the level at which each calculation is performed. Counts of findings, correlated groups,
+URLs, scans or applications are different measures. Average severity, Fortify priority counts and
+engine-specific scores are not interchangeable. Percentages with no denominator are not automatically
+zero, and averaging already-aggregated percentages may produce a different portfolio result.
 
-## Step 5: Handle Engine And Mapping Diversity
+Verify dataset and presentation filters, user-selected dimensions, and authorization/scope helpers.
+For example, sampled templates used `util.getProjectVersionIdsInClause(...)`; inspect the helper and
+its expansion rather than replacing it with a fixed version ID or unrestricted query. Generated SQL
+must preserve authorized scope, validate identifiers/values, and use binding wherever supported.
 
-Keep raw engine codes for predicates, joins and presence checks. Expose display labels separately:
-for example, raw `SCA` may be displayed as `Fortify SAST`; it does not mean open-source dependency SCA.
-Observed `SECURITYSCOPE`/`WEBINSPECTAGENT` aliases require version-specific confirmation before merging.
+Issue visibility, audit flags, rule text, engine aliases and external mappings matter only when the
+report uses those concepts. Apply their semantics consistently when relevant, not to every metric.
 
-Present engines in category tables come from that category's selected issues, not a fixed pivot.
-For Executive Summary, distinguish "these engines have scan results" from a full engine inventory.
-One observed inventory combined standard Fortify engines with enabled parser metadata and marked
-presence from scans. Verify lifecycle/version fields such as `lastAction` and `lastUsedOfKind`; they
-are not a universal enabled-plugin API. If inventory cannot be established, use an explicit
-"Results Present:" list rather than implying absent engines do not exist.
+## Step 4: Trace The Full Data Pipeline
 
-`issueAbstract` may contain per-finding HTML, plain text or Markdown; `issueRecommendation` and
-`snippetId` may be empty for parser findings. Inspect available channels rather than assuming every
-engine has SAST taint/source/sink data. Use plain-text rendering for untrusted labels; use a vetted
-allowlist sanitizer for rich content. Regex HTML detection is not sanitization.
+The SQL query is not always the final source of a displayed value. Follow scripted datasets, computed
+columns, joint datasets, cube dimensions/measures, aggregations, chart expressions, sorting/filtering
+and event handlers that affect it. Validate calculations at each relevant boundary.
 
-External list reports in the observed bundle mapped `mappedCategory` through `catpacklookup` to
-`catpackexternalcategory`/`catpackexternallist`. This is distinct from rule metadata and from grouping
-in Developer Workbook. Unmapped categories should be visible as unmapped, not silently counted as
-"compliant". Do not assign OWASP categories by kingdom alone or by substring guesses.
-Supplemental metadata support must be confirmed for the SSC version; do not modify vendor-managed
-ExternalMetadata files or catpack DB rows as part of report editing.
+Preserve parameter types/defaults and conditional sections. A chart or crosstab may need grouped data
+at a different grain from a detail table; do not flatten or double-aggregate it accidentally.
+Define deterministic grouping, locale and ordering appropriate to that output. For long text, apply
+the portability restrictions only if the report actually groups or compares it.
+
+## Step 5: Choose Purpose-Specific Data Checks
+
+Use fixtures for empty and populated results plus the branches changed by the request. Examples are
+multiple versions, several time periods with a missing interval, metadata selections, a zero denominator,
+ties in scan selection, or joined records lacking optional enrichment. For issue reports, add the
+requested visibility/engine/audit/description cases rather than requiring them for every report.
+
+Reconcile displayed measures with source observations and the agreed calculation, including units and
+rounding. Use independent fixtures or test-only report copies when production data lacks a branch;
+never alter SSC data to manufacture a test. Such test copies are not deployable deliverables.

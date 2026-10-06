@@ -1,6 +1,6 @@
 ---
 name: fortify-ssc-report-dev
-description: "Create, enhance, and troubleshoot Fortify SSC custom BIRT reports, report templates, libraries, SQL datasets, and report seed bundles; use for Developer Workbook or external-category report development, parser-plugin finding coverage, and automated HTML/PDF report validation"
+description: "Create, enhance, and troubleshoot Fortify SSC custom BIRT reports, report templates, libraries, SQL or scripted datasets, charts, and report seed bundles; use for report data accuracy, layout, runtime errors, portable SQL, and automated report validation"
 license: MIT
 metadata:
   version: "1.0.0"
@@ -40,7 +40,8 @@ Reuse facts already established in the conversation. Ask only for missing decisi
 - Exact template, SSC version, desired output formats, and known failing behavior/output?
 - Required DB coverage; default is all three SSC-supported engines above.
 - Available seed bundle/libraries, BIRT runtime or Designer, and read-only DB access mechanism?
-- Representative application version and filter-set GUID, including parser-plugin findings if relevant?
+- Report purpose and grain: portfolio/application, version/scan, historical measurement, correlation,
+  or issue detail? Which identifiers, date ranges, filters, locale and representative fixtures apply?
 - Target files, authorized changes, checkpoint location, and required acceptance checks?
 
 Start from the failing element/dataset or nearest working seed example. Do not scan the whole SSC
@@ -71,8 +72,9 @@ components, datasets, cubes, scripts, and report-definition entries; text search
 complete dependency analysis. Agree on representative regression reports.
 
 For a new report, start with a minimal working report and compatible SSC datasource/library from
-the matching seed bundle. Add parameters, one dataset, and one table first. Validate that baseline
-before expanding sections, charts, grouping, navigation, or registration metadata.
+the matching seed bundle. Add the required parameters, one dataset and one suitable presentation
+element (table, chart, list or crosstab). Validate that baseline before expanding the report.
+Choose a seed example with similar purpose and scope, not automatically a detailed issue workbook.
 
 Load [BIRT editing and layout](./references/birt-editing-and-layout.md) for inheritance or layout work.
 
@@ -97,17 +99,21 @@ Read the current file before editing; Designer saves may have changed formatting
 Preserve namespaces, scripts, CDATA semantics, line endings, and user edits. Use structured XML tools
 for mechanical copying/renumbering, while minimizing changes outside the touched elements.
 
-For data changes, trace inclusion and enrichment separately. Categories must not disappear because
-optional rule descriptions or external mappings are absent. Keep raw engine identifiers for joins
-and expose user-friendly labels separately.
+For data changes, establish the row grain, selection scope, source of truth and metric definition.
+Trace inclusion separately from optional enrichment; joins must neither silently drop intended records
+nor multiply measures. Distinguish current state from historical observations, and verify time ranges,
+units, null/zero handling, calculated fields and aggregation levels where relevant.
 
 Load [portable SQL and SSC data](./references/portable-sql-and-ssc-data.md) before changing datasets.
 Keep JDBC placeholders, ordered parameters, result metadata, computed columns, and bound columns
 consistent. Avoid grouping/hash operations over long description text in SQL across DB engines.
-Do not claim that two descriptions are equal merely because they share a category or rule identifier.
+For issue-detail, engine or external-mapping work, load the optional
+[issue-report examples](./references/issue-detail-and-engine-examples.md); do not apply those patterns
+as requirements for unrelated reports. When displaying the technical engine code `SCA`, prefer
+`Fortify SAST` to avoid confusion with Software Composition Analysis, while retaining raw identifiers.
 
-For layout changes, state an observable check, such as first category sharing a page with its section
-heading, a two-row header spanning the expected columns, or severity colors matching the seed style.
+For layout changes, state an observable check appropriate to the report: title/group adjacency,
+chart readability, crosstab dimensions, table-header spans, wrapping, or consistent seed styles.
 
 ## Step 4: Test Immediately, Then Checkpoint
 
@@ -116,10 +122,11 @@ it fails, then render the affected output format(s). Do not accumulate untested 
 
 Required checks depend on the change:
 
-- Data: execute the actual parameterized query, then reconcile report counts with independent
-  read-only queries using the same version, filter set, and exclusions.
+- Data: execute the actual parameterized query or scripted dataset, then reconcile records/measures
+  with independent read-only evidence using the same scope, time range, filters and aggregation grain.
 - BIRT wiring: run the report engine; XML parsing alone cannot detect lost inherited column bindings.
-- Layout: inspect rendered HTML styles/attributes and PDF page placement; confirm visually where
+- Layout: inspect affected output formats, including HTML styles/attributes or PDF page placement;
+  confirm visually where
   alignment, wrapping, clipping, chart sizing, or color is part of acceptance.
 - Shared libraries: run the agreed consumer regression set, not only the edited report.
 
@@ -146,6 +153,7 @@ remaining upgrade/regression risks. Do not bundle checkpoints, credentials, cust
 ## References
 
 - [Environment, runtime and seed acquisition](./references/environment-and-seeds.md)
-- [Portable SQL, visibility and parser-plugin data](./references/portable-sql-and-ssc-data.md)
+- [Portable SQL, scope and metric semantics](./references/portable-sql-and-ssc-data.md)
 - [BIRT inheritance, editing and layout](./references/birt-editing-and-layout.md)
 - [Rendering, diagnostics and incremental checkpoints](./references/validation-and-checkpoints.md)
+- [Optional issue-detail, engine and external-list examples](./references/issue-detail-and-engine-examples.md)
