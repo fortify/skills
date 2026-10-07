@@ -64,6 +64,19 @@ are routed separately from the main skill.
 Read the report's actual parameters, scripts and query logic. Only request a version/filter-set GUID
 when the report uses them; portfolio selectors, date ranges, measurement definitions or metadata
 filters may be the relevant inputs instead.
+For issue reports inheriting `FortifyBasicElements.projectversionid`, normally preserve the companion
+`FortifyBasicElements.filterSetGuid` parameter and its library/registration contract. Its library
+definition is optional, distinct, string, static/simple text-box, unconcealed and unformatted, with
+standard default GUID `a243b195-0a59-3f8b-1403-d55b7a7d78e6`; SSC updates this default for the selected
+version. Reuse it where possible. A local definition must preserve these characteristics/default and
+aligned dataset parameter metadata. Standalone BIRT must receive the intended version ID and GUID;
+intentionally unfiltered reports require an explicit scope decision.
+Use selected cache visibility and folder membership
+consistently across category drivers, summary counts and detail rows; do not substitute global hidden
+flags or select an arbitrary filter-set row. Verify one matching cache row per issue/version/filter set.
+Folders are fully customizable: they are not the four fixed SSC criticalities. Where a criticality
+breakdown is requested, use `friority` (Critical/High/Medium/Low) rather than folder labels or raw
+severity, and flag invalid/missing priorities during validation instead of adding `Other`.
 
 For history/trend reports, establish:
 

@@ -14,11 +14,14 @@ For an issue-detail report intended to cover selected findings:
 
 - Drive category/detail inclusion from those issues, not from optional rule descriptions.
 - Treat rule text, external mappings, source snippets and plugin metadata as enrichment.
-- Keep project-version scoping in joins and check engine/rule-key collisions.
+- Check engine/rule-key collisions and keep joins compatible with the agreed scope.
 - Rule text lookup through `projectversion_rule` can account for overridden descriptions; a direct
   `issue.ruleGuid = ruledescription.guid` join is not always equivalent.
 - Select a deterministic locale and agreed fallback; multiple language/description rows must not duplicate findings.
-- Keep selected-filter visibility consistent between category drivers, summaries and details.
+
+Load [portable SQL and SSC data](references/portable-sql-and-ssc-data.md) for issue scope, selected
+filter-set visibility, and criticality rules. This file owns enrichment and example queries, not a
+separate selection policy.
 
 An observed Developer Workbook drove Results Outline through `ruledescription` and `ruleview`,
 while its overview counted issues directly. FAA and Debricked findings lacked matching project-rule
@@ -46,11 +49,9 @@ GROUP BY i.engineType
 ORDER BY i.engineType
 ```
 
-Verify one cache/filter-set row per selected issue; otherwise counts multiply. Global issue `hidden`
-and selected `issuecache.hidden` can disagree. Document suppressed, hidden, removed, audited and
-correlated treatment for this report, not as a blanket rule for every SSC metric.
-`friority` represents Fortify priority, unlike raw `severity` or engine priority. An audited/total table
-may display `a / t` for nonzero counts and a bare `0`, matching an existing report's convention.
+Apply the SQL reference's cache-cardinality, selected-visibility and fixed-criticality rules.
+Document suppressed, removed, audited and correlated treatment for this report. An audited/total
+table may display `a / t` for nonzero counts and a bare `0`, matching a seed convention.
 
 ## Step 3: Group Long Descriptions Only When Requested
 
@@ -70,9 +71,10 @@ None of this processing is needed for a report that displays only summary measur
 
 ## Step 4: Engine-Specific Presentation Examples
 
-Keep raw identifiers for joins. The deprecated/technical `SCA` engine code may display as `Fortify SAST`
-to avoid confusion with Software Composition Analysis. Confirm observed
-`SECURITYSCOPE`/`WEBINSPECTAGENT` aliases for the target version before merging them.
+Keep raw identifiers for joins and other logic. By default, display the deprecated/technical `SCA`
+engine code as `Fortify SAST` to avoid confusion with Software Composition Analysis, unless the user
+requests otherwise. Confirm observed `SECURITYSCOPE`/`WEBINSPECTAGENT` aliases for the target version
+before merging them.
 
 If a requested table breaks down selected issues by engine, derive present engines from those issues.
 If a report needs a full engine inventory, verify standard engines and available/enabled plugin metadata
@@ -105,7 +107,10 @@ For the corresponding feature, examples include:
 - Project identity survives replacement of a workbook engine component.
 - Plugin-only categories appear when mixed-engine issue coverage is intended.
 - Critical/High/Medium/Low, audited and Total counts match independently selected issues.
-- Severity sums equal Total only when all selected issues have recognized priorities; expose unexpected values.
+- The four criticality counts sum to Total; flag missing/unrecognized values as a validation problem,
+  not an additional report criticality. Renamed/custom folders do not change that classification.
+- Default/selected filter-set GUID and visibility match across summaries, category groups and details;
+  include a case where global `hidden` and selected cache visibility differ.
 - Distinct description content is not collapsed by category/rule identity.
 - Results Outline has one body heading plus its TOC entry, with an empty-result fallback.
 - Category/summary/table adjacency, header spans/colors and natural long-description pagination meet agreed layout goals.

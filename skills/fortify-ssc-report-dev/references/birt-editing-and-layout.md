@@ -6,45 +6,62 @@ Resolve the report-definition entry to its actual template, then follow `librari
 datasets, component bindings, scripts and nested inherited elements. A thin `.rptdesign` may delegate
 its behavior to several `.rptlibrary` files. Start at the failure, not at every file in the bundle.
 
-For one report, prefer template-local changes over modifying shipped libraries, but choose how much
-library dependency to retain. For library maintenance, agree on affected consumers and test their
-relevant branches. Record the chosen tradeoff before materializing large components.
+Libraries define reusable parameters, datasets, layout, and styles. Before creating a report or
+changing ownership, determine which components should be inherited, copied, or defined locally based
+on compatibility and the task. Do not assume a blanket reuse preference specifies every component;
+resolve only ownership decisions needed to proceed. Always retain the shared datasource reference
+(`FEM360DB` in observed seeds; verify the actual name/namespace) and never copy its connection settings.
 
-### Dependency Strategy
+| Component | Starting choice | Main consideration |
+|-----------|-----------------|--------------------|
+| `FEM360DB` datasource | Always retain shared library/reference | SSC injects connection settings; never copy them |
+| Parameters | Reuse/inherit when compatible | Usually lower risk, but type/default and SSC-injected behavior must match |
+| Datasets | Reuse when scope/query/output contract fits | Medium risk: schema fixes help, while parameter, grain and result-binding contracts can change |
+| Layout elements/styles | Reuse only if they fit the requested layout or can be safely overridden/customized | Higher risk: inherited components may bring nested layout, styles, scripts or behavior |
 
-| Strategy | Benefit | Upgrade responsibility |
-|----------|---------|------------------------|
-| Inherit library components/datasets | Small customization; receives library fixes, including query/schema adaptations | Library changes can break element IDs, overrides, layouts or binding contracts; test against updated libraries |
-| Copy layout, retain dataset/library references | Isolates presentation while potentially receiving schema-related query fixes | Query output/parameter contracts, scripts and styles can still change; inspect retained dependencies |
-| Copy required components and datasets, retain shared F360 datasource | More predictable standalone custom-report behavior when libraries change | Manually adapt copied queries to SSC schema changes and port relevant fixes from updated seeds |
+Record each component as inherited, copied, or newly defined. Inheritance requires actual library
+includes/`extends` or theme/style references; matching local definitions do not count. Verify ownership
+in XML and exercise inherited elements at runtime. Do not silently copy selected inherited components
+to avoid dependencies or scripts. If a contract or layout is incompatible, explain the tradeoff and
+obtain the user's decision before substituting a local alternative. For other components, choose a
+compatible seed copy or local definition based on the established requirements; surface the choice if
+it materially changes ownership or upgrade responsibility. Include the dependency closure (bindings,
+styles, scripts, images, resources and IDs); retain only references proven unused. Copies require manual
+porting of later library/schema fixes, so no option is upgrade-proof. Record source versions and
+customizations. For shared-library edits, trace consumers and determine representative regressions.
 
-For an individual report, the third option may make sense even though seed-library updates are
-infrequent. It is not automatically safer for someone who cannot maintain the copied queries.
-Neither inherited nor copied reports are guaranteed to survive an SSC/schema/runtime upgrade.
-
-Keep the F360 DB datasource shared: in an observed seed this was `FEM360DB`, ultimately extending
-`FortifyF360DataSource.FEM360DB`. Discover the actual names/namespace for the target version. Do not
-embed copied installation credentials or replace SSC's datasource-injection contract accidentally.
-Keep the necessary datasource library include even when other library references are removed.
-
-Copy the dependency closure deliberately: nested components, datasets, parameters, computed/bound
-columns, styles, cubes, master pages, scripts and images. Copying only the visible grid while leaving
-transitive `extends` or script/style references does not provide full isolation. Preserve or package
-required script/image resources without assuming they can all be inlined. Confirm unique IDs/names
-and rewrite local references consistently; remove only library includes proven unused.
-
-Record each copied element's source bundle/library version, customized behavior and retained references
-in the agreed record. Keep a pristine comparison baseline. Licensed resources remain subject to their
-distribution terms; copying into a customer template does not make them public skill assets.
+For issue reports using `projectversionid`, normally retain `filterSetGuid`; its exact contract is in
+[portable SQL and SSC data](references/portable-sql-and-ssc-data.md).
 
 Inheritance varies by report family: sampled WIE templates inherited parameters/components from
 `FortifyWIEElements`, while project and workbook templates mixed local logic with common components.
 External-list templates also reused dedicated libraries. Follow the actual dependencies rather than
 assuming a previous report's ownership graph applies to the next one.
 
-For new reports, use a small compatible seed example with working datasource and parameters rather
-than immediately cloning the largest report. If registration is required, inspect the installed
-`ReportDefinitions.xml`/`ReportLibraryDefinitions.xml` structure and parameter types; do not invent XML.
+For a new report, begin with a small compatible seed and a working datasource/parameter path, not the
+largest available report. If registration is needed, inspect `ReportDefinitions.xml`,
+`ReportLibraryDefinitions.xml`, and parameter types; do not invent XML.
+
+### Step 1a: Establish Presentation And Resolve Styles
+
+For a new report or requested redesign, establish presentation needs such as style, authorized branding,
+assets, ToC, and generic content. Use the request and comparable seed reports to guide defaults; resolve
+ambiguities that materially affect the design, and avoid adding unrequested boilerplate. A ToC may help
+long or multi-section reports; there is no fixed page threshold. Do not fabricate branding. For existing
+reports, preserve their style, logo, ToC, and boilerplate unless asked otherwise; a new element does not
+imply redesign.
+
+Match actual local/inherited style definitions, theme/highlight rules, and comparable elements, not
+just style names. For new elements without a counterpart, use standard SSC styles unless directed
+otherwise. Inspect the matching seed rather than guessing fonts/colors. Preserve familiar Critical/
+High/Medium/Low color meaning unless the user directs otherwise. Do not edit a shared style library
+for a single report. Verify fonts/substitution, contrast, hierarchy, spacing, and surrounding content
+in requested PDF/DOC/XLS outputs.
+
+For logos, verify resource path, format, proportions, and placement; package only authorized assets.
+For ToC, verify bookmarks, labels, links, and page references where supported, including empty reports
+and long labels. Keep the ToC entry distinct from its body heading; check for duplicate headings,
+blank pages, or detached content. Record presentation choices and dependencies with the test record.
 
 ## Step 2: Preserve The BIRT Model
 
@@ -56,6 +73,12 @@ than immediately cloning the largest report. If registration is required, inspec
   may require explicit bound-column definitions, including aggregate aliases used by footers.
 - Update JDBC parameter positions, defaults, `paramName`, result metadata, computed columns and table
   bindings together. Do not assume a query override automatically updates them.
+- BIRT `data` elements must reference a valid `resultSetColumn` with matching bound columns. For
+  calculated display values, define a named expression binding and reference it; a standalone
+  `valueExpr` can be ignored, yielding blank output even when the task records no errors. Assert
+  actual rendered labels/values before declaring the binding successful.
+- Check duplicate named properties as well as IDs; accidentally appending a second `dataType` is
+  not a deliberate metadata update, even if a runtime happens to accept it.
 - Do not duplicate or blindly copy Designer `designerValues` metadata; it can be stale after query changes.
 - Use XML escaping/CDATA APIs correctly. XML entities, report JavaScript strings and rendered HTML are
   different encoding layers. Never globally replace names/engine codes across the whole report.
@@ -76,11 +99,9 @@ Use column tracks whose widths sum to the available table/page width. Check mult
 repeated headers, and dynamic columns or crosstab dimensions if present. For charts, preserve intended
 axes, series, labels, legends and measurement units. Choose layout based on output format and purpose,
 not a universal severity/engine table design.
-
-Reuse appropriate seed styles where that matches the report's visual language. Verify resolved colors,
-fonts and highlight rules rather than relying on style names. Match comparable labels and values;
-severity colors are relevant only to severity-oriented displays. Readability of trend lines, legends
-and aggregate dimensions may be the actual concern for other reports.
+Apply Step 1a/1b for presentation decisions and resolved styles. Validate layout in the agreed SSC
+formats using this skill's `references/validation-and-checkpoints.md`; diagnostic HTML must not drive
+format-specific template fixes. For metric/criticality semantics use the SQL reference, not color cues.
 
 Place `verticalAlign=top` on spanning header cells when top alignment is the requested layout.
 BIRT HTML may emit `valign="top"` rather than CSS `vertical-align`; check both.
