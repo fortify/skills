@@ -17,7 +17,8 @@
     "./skills/fortify-dependency-upgrade/",
     "./skills/fortify-change-review/",
     "./skills/fortify-create-app/",
-    "./skills/fortify-cicd-integration/"
+    "./skills/fortify-cicd-integration/",
+    "./skills/fortify-faa/"
   ],
   "agents": [
     "./agents/fortify-onboard.agent.md",
